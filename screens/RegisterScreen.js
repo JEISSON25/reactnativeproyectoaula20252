@@ -1,76 +1,47 @@
+import React, { useState } from "react";
+import { View, TextInput, Button, Alert } from "react-native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
-import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { auth } from "../services/firebaseConfig";
 
 export default function RegisterScreen({ navigation }) {
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleSignUp = () => {
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                console.log("Usuario registrado:", userCredential.user);
-                Alert.alert("Éxito", "Usuario registrado con éxito ✅");
-                navigation.navigate("Login");
-            })
-            .catch((error) => {
-                console.log("Error:", error.message);
-                Alert.alert("Error", error.message);
-            });
+    const handleRegister = async () => {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+            console.log("Usuario registrado:", userCredential.user.email);
+            Alert.alert("Registro exitoso", "Ya puedes iniciar sesión");
+            navigation.navigate("Login");
+
+        } catch (error) {
+            console.error("Error", error.message);
+            Alert.alert("Error", error.message);
+        }
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Registro</Text>
-
+        <View style={{ padding: 20 }}>
             <TextInput
-                style={styles.input}
-                placeholder="Correo electrónico"
+                placeholder="Correo"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
-                keyboardType="email-address"
+                style={{ borderBottomWidth: 1, marginBottom: 15 }}
             />
-
             <TextInput
-                style={styles.input}
                 placeholder="Contraseña"
-                secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                secureTextEntry
+                style={{ borderBottomWidth: 1, marginBottom: 15 }}
             />
-
-            <Button title="Registrarse" onPress={handleSignUp} />
-
-            <View style={{ marginTop: 10 }}>
-                <Button
-                    title="Volver al Login"
-                    onPress={() => navigation.navigate("Login")}
-                />
-            </View>
+            <Button title="Registrar" onPress={handleRegister} />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        padding: 20,
-        backgroundColor: "#fff",
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 20,
-        textAlign: "center",
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 5,
-        padding: 10,
-        marginBottom: 15,
-    },
-});

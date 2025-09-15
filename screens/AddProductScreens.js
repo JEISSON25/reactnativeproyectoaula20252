@@ -1,112 +1,71 @@
 import React, { useState } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    Button,
-    StyleSheet,
-    Image,
-    Alert,
-} from "react-native";
+import { View, TextInput, Button, Alert, Image } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useProducts } from "../contexts/ProductsContext";
 
-export default function AddProductScreen({ navigation }) {
+export default function AddProductScreens({ navigation }) {
     const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [price, setPrice] = useState("");
+    const [code, setCode] = useState("");
+    const [quantity, setQuantity] = useState("");
     const [image, setImage] = useState(null);
 
-    const { addProduct } = useProducts();
-
-    const pickImage = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
-
-        if (!result.canceled) {
-            setImage(result.assets[0].uri);
+    async function pickImage() {
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 1,
+            });
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            Alert.alert("Error", "No se pudo seleccionar la imagen");
         }
-    };
+    }
 
-    const handleSaveProduct = () => {
-        if (!name || !description || !price || !image) {
-            Alert.alert("Error", "Completa todos los campos y selecciona una foto");
+    function handleSave() {
+        if (!name || !code || !quantity || !image) {
+            Alert.alert("Error", "Completa todos los campos");
             return;
         }
 
-        const newProduct = {
-            id: Date.now().toString(),
-            name,
-            description,
-            price,
-            image,
-        };
+        console.log("Producto guardado ", { name, code, quantity, image });
+        Alert.alert("Exito", "Producto guardado");
 
-        addProduct(newProduct);
-        Alert.alert("Éxito", "Producto agregado ✅");
-        navigation.goBack();
-    };
+        setName("");
+        setCode("");
+        setQuantity("");
+        setImage(null);
+
+        navigation.navigate("Home");
+    }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Agregar Producto</Text>
-
+        <View style={{ padding: 20 }}>
             <TextInput
-                style={styles.input}
-                placeholder="Nombre"
+                placeholder="Nombre del producto"
                 value={name}
                 onChangeText={setName}
+                style={{ marginBottom: 15, padding: 8, borderWidth: 1, borderColor: '#ccc' }}
             />
-
             <TextInput
-                style={styles.input}
-                placeholder="Descripción"
-                value={description}
-                onChangeText={setDescription}
+                placeholder="Código"
+                value={code}
+                onChangeText={setCode}
+                style={{ marginBottom: 15, padding: 8, borderWidth: 1, borderColor: '#ccc' }}
             />
-
             <TextInput
-                style={styles.input}
-                placeholder="Precio"
-                value={price}
-                onChangeText={setPrice}
+                placeholder="Cantidad"
+                value={quantity}
+                onChangeText={setQuantity}
                 keyboardType="numeric"
+                style={{ marginBottom: 15, padding: 8, borderWidth: 1, borderColor: '#ccc' }}
             />
 
-            <Button title="Seleccionar Foto" onPress={pickImage} />
-            {image && (
-                <Image
-                    source={{ uri: image }}
-                    style={{ width: 200, height: 200, marginVertical: 10 }}
-                />
-            )}
+            <Button title="Seleccionar Imagen" onPress={pickImage} />
 
-            <Button title="Guardar Producto" onPress={handleSaveProduct} />
+            {image && <Image source={{ uri: image }} style={{ width: 100, height: 100, marginVertical: 10 }} />}
+
+            <Button title="Guardar Producto" onPress={handleSave} />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: "#fff",
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 20,
-        textAlign: "center",
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 5,
-        padding: 10,
-        marginBottom: 15,
-    },
-});

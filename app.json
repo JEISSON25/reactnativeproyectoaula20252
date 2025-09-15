@@ -1,10 +1,11 @@
 {
   "expo": {
-    "name": "inventario-rn",
-    "slug": "inventario-rn",
+    "name": "reactnativeproyectoaula20252",
+    "slug": "reactnativeproyectoaula20252",
     "version": "1.0.0",
+    "sdkVersion": "49.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "inventariorn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,19 +13,19 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.tdea.inventariorn",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
     "platforms": ["ios", "android"],
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

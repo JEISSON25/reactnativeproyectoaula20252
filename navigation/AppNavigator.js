@@ -1,36 +1,45 @@
 import React from "react";
+import { View, Text, ActivityIndicator } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
+import HomeScreen from "../screens/HomeScreen";
+import AddProductScreens from "../screens/AddProductScreens";
 import InventoryScreen from "../screens/InventoryScreen";
-import AddProductScreen from "../screens/AddProductScreen";
+
+import { useAuth } from "../contexts/MyAuthContext";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <ActivityIndicator size="large" />
+                <Text>Cargando...</Text>
+            </View>
+        );
+    }
+
     return (
-        <Stack.Navigator initialRouteName="Login">
-            <Stack.Screen
-                name="Login"
-                component={LoginScreen}
-                options={{ title: "Iniciar Sesión" }}
-            />
-            <Stack.Screen
-                name="Register"
-                component={RegisterScreen}
-                options={{ title: "Registro" }}
-            />
-            <Stack.Screen
-                name="Inventory"
-                component={InventoryScreen}
-                options={{ title: "Inventario" }}
-            />
-            <Stack.Screen
-                name="AddProduct"
-                component={AddProductScreen}
-                options={{ title: "Agregar Producto" }}
-            />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!user ? (
+                <>
+                    <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="Register" component={RegisterScreen} />
+                </>
+            ) : (
+                <>
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="AddProduct" component={AddProductScreens} />
+                    <Stack.Screen name="Inventory" component={InventoryScreen} />
+                </>
+            )}
         </Stack.Navigator>
     );
 }
