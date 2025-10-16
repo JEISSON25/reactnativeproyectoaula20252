@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext } from "react";
-
 const ProductsContext = createContext();
 
 export const ProductsProvider = ({ children }) => {
@@ -9,8 +8,18 @@ export const ProductsProvider = ({ children }) => {
         setProducts((prev) => [...prev, product]);
     };
 
+    const updateProductQuantity = (productId, newQuantity) => {
+        setProducts((currentProducts) =>
+            currentProducts.map((product) =>
+                product.id === productId
+                    ? { ...product, quantity: newQuantity }
+                    : product
+            )
+        );
+    };
+
     return (
-        <ProductsContext.Provider value={{ products, addProduct }}>
+        <ProductsContext.Provider value={{ products, addProduct, updateProductQuantity }}>
             {children}
         </ProductsContext.Provider>
     );

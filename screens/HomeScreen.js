@@ -4,7 +4,8 @@ import { View, Text } from "react-native";
 
 import AddProductScreens from "./AddProductScreens";
 import InventoryScreen from "./InventoryScreen";
-
+import MovementScreen from "./MovementScreen";
+import ReportsScreen from "./ReportsScreen";
 
 function DashboardScreen() {
     return (
@@ -22,6 +23,8 @@ export default function HomeScreen() {
             <Tab.Screen name="Dashboard" component={DashboardScreen} />
             <Tab.Screen name="Agregar Producto" component={AddProductScreens} />
             <Tab.Screen name="Inventario" component={InventoryScreen} />
+            <Tab.Screen name="Movimientos" component={MovementScreen} />
+            <Tab.Screen name="Reportes" component={ReportsScreen} />
         </Tab.Navigator>
     );
 }

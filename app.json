@@ -8,7 +8,6 @@
     "icon": "./assets/icon.png",
     "scheme": "inventariorn",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -17,8 +16,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "platforms": ["ios", "android"],
     "plugins": [
