@@ -1,12 +1,62 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, Picker } from "react-native";
-import { collection, addDoc, updateDoc, doc, getDocs, query, where, Timestamp } from "firebase/firestore";
-import { db } from "../services/firebaseConfig";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Button, Alert } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import NetInfo from "@react-native-community/netinfo";
+
+import { useProducts } from "../contexts/ProductsContext";
+
+import {
+    addPendingMovement,
+    getPendingMovements,
+    savePendingMovements,
+    clearPendingMovements,
+} from "../services/offline";
+
 
 export default function MovementScreen() {
     const [productName, setProductName] = useState("");
     const [type, setType] = useState("entrada");
     const [quantity, setQuantity] = useState("");
+    const { products, updateProductQuantity } = useProducts();
+    const [isConnected, setIsConnected] = useState(true);
+    const [syncing, setSyncing] = useState(false);
+
+
+    useEffect(() => {
+
+        const unsubscribe = NetInfo.addEventListener((state) => {
+            const connected = !!state.isConnected;
+            setIsConnected(connected);
+            if (connected) {
+                doSyncPending();
+            }
+        })
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+
+
+    async function doSyncPending() {
+        setSyncing(true);
+        try {
+            const pending = await getPendingMovements();
+            if (pending.length === 0) {
+                setSyncing(false);
+                return;
+            }
+
+            await clearPendingMovements();
+
+            Alert.alert("Sincronización", "Movimientos pendientes sincronizados correctamente.");
+        } catch (e) {
+            console.error("doSyncPending error", e);
+        } finally {
+            setSyncing(false);
+        }
+    }
+
 
     const handleRegisterMovement = async () => {
         if (!productName || !quantity) {
@@ -14,49 +64,66 @@ export default function MovementScreen() {
             return;
         }
 
-        try {
-            const q = query(collection(db, "products"), where("name", "==", productName));
-            const querySnapshot = await getDocs(q);
+        const q = parseInt(quantity, 10);
+        if (isNaN(q) || q <= 0) {
+            Alert.alert("Error", "La cantidad debe ser un número entero positivo");
+            return;
+        }
 
-            if (querySnapshot.empty) {
-                Alert.alert("Error", "No se encontró el producto");
+        const productToUpdate = products.find(p =>
+            p.name.toLowerCase() === productName.toLowerCase()
+        );
+
+        if (!productToUpdate) {
+            Alert.alert("Error", "Producto no encontrado. Revisa el nombre.");
+            return;
+        }
+
+        const currentQuantity = Number(productToUpdate.quantity);
+        let newQuantity;
+
+        if (type === "entrada") {
+            newQuantity = currentQuantity + q;
+        } else {
+            if (currentQuantity < q) {
+                Alert.alert("Error", `Cantidad insuficiente. Stock actual de ${productToUpdate.name}: ${currentQuantity}`);
                 return;
             }
+            newQuantity = currentQuantity - q;
+        }
 
-            const productDoc = querySnapshot.docs[0];
-            const productData = productDoc.data();
-            let newQuantity = parseInt(productData.quantity);
+        try {
 
-            if (type === "entrada") {
-                newQuantity += parseInt(quantity);
-            } else if (type === "salida") {
-                if (newQuantity < quantity) {
-                    Alert.alert("Error", "Cantidad insuficiente en inventario");
-                    return;
-                }
-                newQuantity -= parseInt(quantity);
+            await updateProductQuantity(productToUpdate.id, newQuantity);
+
+            const newMovement = {
+                id: Date.now().toString(),
+                productId: productToUpdate.id,
+                productName: productToUpdate.name,
+                type,
+                quantity: q,
+                date: new Date().toISOString(),
+                synced: isConnected,
+            };
+
+            if (isConnected) {
+                await addPendingMovement(newMovement);
+                await doSyncPending();
+            } else {
+                await addPendingMovement({ ...newMovement, synced: false });
+                Alert.alert("Offline", "Movimiento guardado localmente y se sincronizará cuando vuelvas a tener conexión.");
             }
 
-            const productRef = doc(db, "products", productDoc.id);
-            await updateDoc(productRef, { quantity: newQuantity });
+            Alert.alert("Éxito", `Movimiento de ${q} unidades de ${productToUpdate.name} registrado.`);
 
-
-
-            await addDoc(collection(db, "movements"), {
-                productName,
-                type,
-                quantity: parseInt(quantity),
-                date: Timestamp.now(),
-            });
-
-            Alert.alert("Éxito", "Movimiento registrado y stock actualizado");
             setProductName("");
             setQuantity("");
             setType("entrada");
 
+
         } catch (error) {
-            console.error(error);
-            Alert.alert("Error", "No se pudo registrar el movimiento");
+            console.error("Error registrando movimiento:", error);
+            Alert.alert("Error", "No se pudo registrar el movimiento de stock.");
         }
     };
 
@@ -66,6 +133,7 @@ export default function MovementScreen() {
         <View style={{ padding: 20 }}>
             <Text style={{ fontSize: 20, marginBottom: 15 }}>Registrar Movimiento</Text>
 
+            <Text>Producto (escribe el nombre):</Text>
             <TextInput
                 placeholder="Nombre del producto"
                 value={productName}
@@ -74,13 +142,9 @@ export default function MovementScreen() {
             />
 
             <Text>Tipo de movimiento:</Text>
-            <Picker
-                selectedValue={type}
-                onValueChange={(itemValue) => setType(itemValue)}
-                style={{ marginBottom: 15 }}
-            >
-                <Picker.Item label="Entrada" value="entrada" />
-                <Picker.Item label="Salida" value="salida" />
+            <Picker selectedValue={type} onValueChange={(v) => setType(v)} style={{ marginBottom: 15 }}>
+                <Picker.Item label="Entrada (Aumentar stock)" value="entrada" />
+                <Picker.Item label="Salida (Disminuir stock)" value="salida" />
             </Picker>
 
             <TextInput
@@ -92,6 +156,10 @@ export default function MovementScreen() {
             />
 
             <Button title="Registrar Movimiento" onPress={handleRegisterMovement} />
+
+            <View style={{ height: 12 }} />
+            <Text>Estado de conexión: {isConnected ? "Conectado" : "Sin conexión (offline)"}</Text>
+            {syncing && <Text>Sincronizando pendientes...</Text>}
         </View>
     );
 }

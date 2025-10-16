@@ -1,16 +1,15 @@
 import React from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
 import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import HomeScreen from "../screens/HomeScreen";
 import AddProductScreens from "../screens/AddProductScreens";
 import InventoryScreen from "../screens/InventoryScreen";
+import MovementScreen from "../screens/MovementScreen";
 
 import { useAuth } from "../contexts/MyAuthContext";
-
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
