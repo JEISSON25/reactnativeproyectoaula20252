@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Entrenador personal",
+    "slug": "EntrenadorPersonal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/LOGO-SPLASH.png",
+    "scheme": "Trainfo",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.trainfo.app",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+
+    },
+    "splash": {
+      "image": "./assets/images/LOGO-SPLASH.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D47A1" 
+    },
+    "web": {}
+  }
+}
