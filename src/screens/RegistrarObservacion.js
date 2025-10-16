@@ -2,14 +2,25 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { db } from "../../firebaseConfig"; 
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-export default function Observaciones() {
+export default function RegistrarObservacion() {
   const [fechaHora, setFechaHora] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [temperatura, setTemperatura] = useState("");
   const [humedad, setHumedad] = useState("");
   const [presion, setPresion] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [user, setUser] = useState(null);
+
+    useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (usuario) => {
+      setUser(usuario); // 
+    });
+
+    return unsubscribe; // limpiar suscripción
+  }, []);
 
   // Al cargar la pantalla, fijamos la fecha y hora actual
   useEffect(() => {
@@ -17,11 +28,25 @@ export default function Observaciones() {
     const fechaFormateada = now.toLocaleDateString();
     const horaFormateada = now.toLocaleTimeString();
     setFechaHora(`${fechaFormateada} ${horaFormateada}`);
-  }, []);
+  }, []);    
+  
 
   const handleGuardar = async () => {
-    try {
+
+    if (!ubicacion.trim()) {
+      Alert.alert("Error", "La ubicación (ciudad) es obligatoria");
+      return;
+    }
+
+    if (!temperatura && !humedad && !presion && !descripcion.trim()) {
+      Alert.alert("Error", "Debes ingresar al menos un valor (temperatura, humedad, presión o descripción)");
+      return;
+    }
+
+    try {     
+
       await addDoc(collection(db, "observaciones"), {
+        uid: user.uid,
         ubicacion,
         temperatura,
         humedad,
