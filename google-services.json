@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082794697707",
+    "project_id": "recetas-saludables-dc3af",
+    "storage_bucket": "recetas-saludables-dc3af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082794697707:android:744faa70b6d17c774aafae",
+        "android_client_info": {
+          "package_name": "com.RecetasSaludables.io"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1JTjdkPep4NWqt64Oz0qQGv_PqkZl7ww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

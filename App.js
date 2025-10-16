@@ -50,18 +50,24 @@ borderWidth: 1, marginBottom: 10 }} />
 
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import NavegacionStack from './navegacion/NavegacionStack'; // Flujo principal
-import AuthStack from './navegacion/AuthStack'; // Flujo de autenticación
+import NavegacionStack from './navegacion/NavegacionStack';
+import AuthStack from './navegacion/AuthStack';
 import { ProveedorAuth, AuthContexto } from './contextos/AuthContexto';
+import { ProveedorFavoritos } from './contextos/FavoritosContexto';
+
 const Rutas = () => {
- const { usuario } = useContext(AuthContexto);
- return usuario ? <NavegacionStack /> : <AuthStack />;
+  const { usuario } = useContext(AuthContexto);
+  return usuario ? <NavegacionStack /> : <AuthStack />;
 };
+
 export default function App() {
- return (
- <ProveedorAuth>
- <NavigationContainer>
- <Rutas />
- </NavigationContainer>
- </ProveedorAuth>
- )}
+  return (
+    <ProveedorAuth>
+      <ProveedorFavoritos>
+        <NavigationContainer>
+          <Rutas />
+        </NavigationContainer>
+      </ProveedorFavoritos>
+    </ProveedorAuth>
+  );
+}

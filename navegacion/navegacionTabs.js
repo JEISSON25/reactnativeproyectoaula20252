@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import LogInScreen from '../screens/LogInScreen';
 import ConfigScreen from '../screens/ConfigScreen';
 import DetailsScreen from '../screens/DetailsScreen';
+import HomeScreen from '../screens/HomeScreen';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,6 +28,9 @@ title: 'Inicio ' }} />
 
  <Tab.Screen name="Configuracion" component={ConfigScreen}
 options={{ title: 'Configuración ' }} />
+
+<Tab.Screen name="Casa" component={HomeScreen}
+options={{ title: 'Casa ' }} />
 
  </Tab.Navigator>
  );

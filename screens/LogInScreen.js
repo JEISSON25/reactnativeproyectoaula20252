@@ -17,7 +17,7 @@ const LoginScreen = () => {
       iniciarSesion(credenciales.user);
 
     } catch (error) {
-      Alert.alert("Error", "❌ Usuario o contraseña incorrectos");
+      Alert.alert("Error", "Usuario o contraseña incorrectos");
     }
   };
 

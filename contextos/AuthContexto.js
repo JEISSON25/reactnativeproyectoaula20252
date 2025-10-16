@@ -3,7 +3,7 @@ export const AuthContexto = createContext();
 export const ProveedorAuth = ({ children }) => {
  const [usuario, setUsuario] = useState(null);
  const iniciarSesion = (datosUsuario) => {
- // Aquí iría la lógica de autenticación
+
  setUsuario(datosUsuario);
  };
  const cerrarSesion = () => {
