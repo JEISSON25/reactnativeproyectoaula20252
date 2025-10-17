@@ -1,55 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, ActivityIndicator, Button, Pressable } from "react-native";
-import {useAuth} from '../../context/AuthContext'
-import { getTransactionByUser, deleteTransaction } from "../../services/transactionService";
-import { Alert } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, Button, Pressable, Alert } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { useTransactions } from "../../hooks/useTransactions";
 
 const TransactionsScreen = ({ navigation }) => {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const {user} = useAuth();
+  const {
+    loading,
+    filtered,
+    loadTransactions,
+    handleDelete,
+    typeFilter,
+    setTypeFilter,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    resetFilters,
+  } = useTransactions();
 
-  const loadTransactions = async () => {
-    try {
-      setLoading(true);
-      if (!user?.uid) return;
-      const data = await getTransactionByUser(user.uid);
-      setTransactions(data);
-    } catch (error) {
-      console.error("Error cargando transacciones:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", loadTransactions);
     return unsubscribe;
   }, [navigation]);
 
-  const handleDelete = (id) => {
+  const confirmDelete = (id) => {
     Alert.alert(
-      "Eliminar transacción", "Estas seguro de que quieres eliminar esta transaccion? Esta acción no se puede deshacer.",
+      "Eliminar transacción",
+      "¿Estás seguro de eliminar esta transacción?",
       [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Eliminar",
           style: "destructive",
-
-          onPress: async () => {
-            try {
-              await deleteTransaction(id);
-              loadTransactions();
-            } catch (error) {
-              console.error("Error al eliminar:", error);
-            }
-          }
-        }
+          onPress: () => handleDelete(id),
+        },
       ]
-    )
+    );
   };
 
   const renderItem = ({ item }) => (
@@ -62,8 +51,8 @@ const TransactionsScreen = ({ navigation }) => {
         backgroundColor: "#d3d5d6ff",
         justifyContent: "center",
         alignItems: "center",
-        flex:1,
-        marginTop: 30,
+        flex: 1,
+        marginTop: 20,
       }}
     >
       <Text style={{ fontWeight: "bold" }}>
@@ -77,11 +66,7 @@ const TransactionsScreen = ({ navigation }) => {
           title="Editar"
           onPress={() => navigation.navigate("TransactionForm", { item })}
         />
-        <Button
-          title="Eliminar"
-          color="red"
-          onPress={() => handleDelete(item.id)}
-        />
+        <Button title="Eliminar" color="red" onPress={() => confirmDelete(item.id)} />
       </View>
     </Pressable>
   );
@@ -96,14 +81,89 @@ const TransactionsScreen = ({ navigation }) => {
 
   return (
     <View style={{ flex: 1, paddingTop: 12 }}>
+      {/* Filtros */}
+      <View
+        style={{
+          padding: 12,
+          marginHorizontal: 12,
+          marginBottom: 10,
+          backgroundColor: "#f0f0f0",
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ fontWeight: "bold", marginBottom: 6 }}>Filtrar por:</Text>
+
+        {/* Tipo */}
+        <View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 8 }}>
+          <Button
+            title="Todos"
+            onPress={() => setTypeFilter("all")}
+            color={typeFilter === "all" ? "#007AFF" : "#999"}
+          />
+          <Button
+            title="Gastos"
+            onPress={() => setTypeFilter("expense")}
+            color={typeFilter === "expense" ? "#007AFF" : "#999"}
+          />
+          <Button
+            title="Ingresos"
+            onPress={() => setTypeFilter("income")}
+            color={typeFilter === "income" ? "#007AFF" : "#999"}
+          />
+        </View>
+
+        {/* Fechas */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View>
+            <Button
+              title={startDate ? `Desde: ${startDate.toLocaleDateString()}` : "Desde"}
+              onPress={() => setShowStartPicker(true)}
+            />
+            <DateTimePickerModal
+              isVisible={showStartPicker}
+              mode="date"
+              date={startDate || new Date()}
+              onConfirm={(date) => {
+                setStartDate(date);
+                setShowStartPicker(false);
+              }}
+              onCancel={() => setShowStartPicker(false)}
+            />
+          </View>
+
+          <View>
+            <Button
+              title={endDate ? `Hasta: ${endDate.toLocaleDateString()}` : "Hasta"}
+              onPress={() => setShowEndPicker(true)}
+            />
+            <DateTimePickerModal
+              isVisible={showEndPicker}
+              mode="date"
+              date={endDate || new Date()}
+              onConfirm={(date) => {
+                setEndDate(date);
+                setShowEndPicker(false);
+              }}
+              onCancel={() => setShowEndPicker(false)}
+            />
+          </View>
+        </View>
+
+        {(startDate || endDate || typeFilter !== "all") && (
+          <View style={{ marginTop: 10 }}>
+            <Button title="Limpiar filtros" color="#ff3b30" onPress={resetFilters} />
+          </View>
+        )}
+      </View>
+
       <FlatList
-        data={transactions}
+        data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={transactions.length === 0 && { flex: 1, justifyContent: 'center', alignItems: 'center' }}
-        ListEmptyComponent={
-            <Text> No tienes transacciones aún.</Text>
+        contentContainerStyle={
+          filtered.length === 0 && { flex: 1, justifyContent: "center", alignItems: "center" }
         }
+        ListEmptyComponent={<Text>No hay transacciones con los filtros aplicados.</Text>}
       />
     </View>
   );

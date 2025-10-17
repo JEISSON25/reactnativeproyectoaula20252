@@ -1,16 +1,21 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import {
+  initializeAuth,
+  getReactNativePersistence,
+  getAuth,
+} from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { initializeFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: Constants.expoConfig.extra.apiKey,
-  authDomain: Constants.expoConfig.extra.authDomain,
-  projectId: Constants.expoConfig.extra.projectId,
-  storageBucket: Constants.expoConfig.extra.storageBucket,
-  messagingSenderId: Constants.expoConfig.extra.messagingSenderId,
-  appId: Constants.expoConfig.extra.appId,
+  apiKey: "AIzaSyCabvj-NH8m7PejkgEvsVgIabgBW0qOcZM",
+  authDomain: "gastos-personales-app.firebaseapp.com",
+  projectId: "gastos-personales-app",
+  storageBucket: "gastos-personales-app.firebasestorage.app",
+  messagingSenderId:"407875236224",
+  appId:"1:407875236224:web:ff35e7cf85f32e2ae91165",
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -24,10 +29,6 @@ try {
   auth = getAuth(app);
 }
 
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  useFetchStreams: false,
-});
-
+const db = getFirestore(app);
 
 export { auth, db };

@@ -3,7 +3,7 @@ import { View, Text, TextInput, Button, Pressable, Platform } from "react-native
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Chip from "../../components/Chip";
 import { useTransactionForm } from "../../hooks/useTransactionForm";
-
+import { useLayoutEffect } from "react";
 
 const toYMD = (d) => {
   const pad = (n) => String(n).padStart(2, "0");
@@ -39,6 +39,12 @@ const TransactionFormScreen = ({ route, navigation }) => {
   const descriptionPlaceholder =
     type === "income" ? "Ej: salario, freelance" : "Ej: almuerzo, mercado";
   const categoryLabel = type === "income" ? "Categoría de ingreso" : "Categoría de gasto";
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: editing ? "Editar transacción" : "Nueva transacción",
+    });
+  }, [navigation, editing]);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>

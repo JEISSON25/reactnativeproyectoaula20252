@@ -7,6 +7,7 @@ import HomeScreen from "../screens/App/HomeScreen";
 import TransactionsScreen from "../screens/App/TransactionsScreen";
 import TransactionFormScreen from "../screens/App/TransactionFormScreen";
 import SettingsScreen from "../screens/App/SettingsScreen";
+import ReportsScreen from "../screens/App/ReportsScreen";
 
 
 const Tab = createBottomTabNavigator();
@@ -22,7 +23,7 @@ const AppTab = () => (
           iconName = focused ? "home" : "home-outline";
         } else if (route.name === "Transactions") {
           iconName = focused ? "list" : "list-outline";
-        } else if (route.name === "Stats") {
+        } else if (route.name === "Reports") {
           iconName = focused ? "bar-chart" : "bar-chart-outline";
         } else if (route.name === "Settings") {
           iconName = focused ? "settings" : "settings-outline";
@@ -39,6 +40,7 @@ const AppTab = () => (
       component={TransactionsScreen}
       options={{ title: "Transacciones" }}
     />
+    <Tab.Screen name="Reports" component={ReportsScreen} options={{title: "Reportes"}}/>
     <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Ajustes" }} />
   </Tab.Navigator>
 );
