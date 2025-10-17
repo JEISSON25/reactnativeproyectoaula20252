@@ -1,38 +1,30 @@
 {
   "expo": {
-    "name": "VirtualPersonalTrainer",
-    "slug": "VirtualPersonalTrainer",
+    "name": "Entrenador personal",
+    "slug": "EntrenadorPersonal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "virtualpersonaltrainer",
+    "icon": "./assets/images/LOGO-SPLASH.png",
+    "scheme": "Trainfo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.trainfo.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
-    },
-    "web": {
 
     },
-    "plugins": [
-
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
-
+    "splash": {
+      "image": "./assets/images/LOGO-SPLASH.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D47A1" 
+    },
+    "web": {}
   }
 }

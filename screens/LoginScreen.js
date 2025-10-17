@@ -1,139 +1,193 @@
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { auth, db } from "../firebaseConfig";
 
 // Pantalla de Login
 const LoginScreen = ({ navigation }) => {
-  // Estados para guardar el correo, la contraseña y si está cargando
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState(""); // correo o username
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Función para manejar el inicio de sesión
   const handleLogin = async () => {
-    // Validación simple: verificar si los campos están llenos
-    if (!email || !password) {
-      Alert.alert('Error', 'Por favor, completa todos los campos');
+    if (!identifier || !password) {
+      Alert.alert("Error", "Por favor, completa todos los campos");
       return;
     }
 
-    setLoading(true); // Activar "cargando..."
+    setLoading(true);
     try {
-      // Llamada a Firebase Auth para iniciar sesión
-      await signInWithEmailAndPassword(auth, email, password);
-      // La navegación a Home la maneja el AuthContext (no aquí)
+      let emailToLogin = identifier;
+
+      // Si no contiene "@", asumimos que es un username
+      if (!identifier.includes("@")) {
+        const q = query(
+          collection(db, "users"),
+          where("username", "==", identifier)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          throw new Error("Usuario no encontrado");
+        }
+
+        // Tomamos el correo del usuario encontrado
+        emailToLogin = querySnapshot.docs[0].data().email;
+      }
+
+      await signInWithEmailAndPassword(auth, emailToLogin, password);
     } catch (error) {
-      // Si hay error, lo mostramos en consola y con un Alert
       console.error("Error de inicio de sesión:", error.code, error.message);
-      Alert.alert("Error", "Credenciales incorrectas. Por favor, verifica tu correo y contraseña.");
+      Alert.alert("Error", "Credenciales incorrectas. Verifica tus datos.");
     } finally {
-      setLoading(false); // Desactivar "cargando..."
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Título de la app */}
-      <Text style={styles.title}>Entrenador Personal Virtual</Text>
-      <Text style={styles.subtitle}>Iniciar Sesión</Text>
-      
-      {/* Input para el correo */}
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      
-      {/* Input para la contraseña */}
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      
-      {/* Botón para iniciar sesión */}
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
-        onPress={handleLogin}
-        disabled={loading} // Se desactiva mientras carga
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-        </Text>
-      </TouchableOpacity>
-      
-      {/* Botón para ir a la pantalla de registro */}
-      <TouchableOpacity 
-        style={styles.linkButton}
-        onPress={() => navigation.navigate('Register')}
-      >
-        <Text style={styles.linkText}>
-          ¿No tienes cuenta? Regístrate aquí
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.card}>
+        <Text style={styles.title}>Entrenador Personal</Text>
+        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+
+        {/* Input correo o usuario */}
+        <TextInput
+          style={styles.input}
+          placeholder="Correo o Nombre de Usuario"
+          placeholderTextColor="#888"
+          value={identifier}
+          onChangeText={setIdentifier}
+          autoCapitalize="none"
+        />
+
+        {/* Input contraseña */}
+        <TextInput
+          style={styles.input}
+          placeholder="Contraseña"
+          placeholderTextColor="#888"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        {/* Botón login */}
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+          activeOpacity={0.85}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Link a registro */}
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={() => navigation.navigate("Register")}
+        >
+          <Text style={styles.linkText}>
+            ¿No tienes cuenta?{" "}
+            <Text style={styles.linkHighlight}>Regístrate aquí</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
-// Estilos
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#000", // negro de fondo
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#1a1a1a", // gris oscuro para contraste
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 6,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 26,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#ff6600", // naranja principal
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
+    fontSize: 16,
+    textAlign: "center",
+    color: "#ccc", // gris claro
+    marginBottom: 25,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: "#2a2a2a",
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 15,
-    fontSize: 16,
+    fontSize: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#444",
+    color: "#fff", // texto input
   },
   button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    borderRadius: 8,
+    backgroundColor: "#ff6600", // naranja
+    paddingVertical: 14,
+    borderRadius: 12,
     marginBottom: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#b34700", // naranja opaco cuando está deshabilitado
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   linkButton: {
-    paddingVertical: 10,
+    marginTop: 10,
   },
   linkText: {
-    color: '#007AFF',
-    textAlign: 'center',
-    fontSize: 16,
+    textAlign: "center",
+    fontSize: 14,
+    color: "#fff",
+  },
+  linkHighlight: {
+    color: "#ff6600",
+    fontWeight: "bold",
   },
 });
 
