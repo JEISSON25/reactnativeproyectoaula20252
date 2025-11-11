@@ -1,10 +1,19 @@
 // src/Pantallas/RegistroUsuario.js
 import React, { useState } from "react";
-import { View, TextInput, Text, Button, StyleSheet, Alert } from "react-native";
+import {
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  Text,
+  Button,
+  StyleSheet,
+  Alert,
+  SafeAreaView,
+} from "react-native";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-
 
 export default function RegistroUsuario() {
   const [nombre, setNombre] = useState("");
@@ -17,13 +26,19 @@ export default function RegistroUsuario() {
 
   const handleRegister = async () => {
     try {
-      
-      if (!nombre.trim() || !apellido.trim() || !pais.trim() || !departamento.trim() || !ciudad.trim() || !email.trim() || !password) {
+      if (
+        !nombre.trim() ||
+        !apellido.trim() ||
+        !pais.trim() ||
+        !departamento.trim() ||
+        !ciudad.trim() ||
+        !email.trim() ||
+        !password
+      ) {
         return Alert.alert("Campos requeridos", "Debes completar todos los campos.");
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      const user = userCredential.user;
+      const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);
 
       await setDoc(doc(db, "usuarios", user.uid), {
         uid: user.uid,
@@ -38,80 +53,72 @@ export default function RegistroUsuario() {
 
       Alert.alert("Registro exitoso", `Bienvenido/a, ${nombre}`);
     } catch (error) {
-      console.log(error);
       Alert.alert("No se pudo registrar", error?.message || "Error desconocido");
     }
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text style={styles.title}>Componente Creación de Usuario</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+        >
+          <Text style={styles.title}>Componente Creación de Usuario</Text>
 
-      <Text>Nombre:</Text>
-      <TextInput
-        placeholder="Nombre"
-        value={nombre}
-        onChangeText={setNombre}
-        style={styles.input}
-      />
+          <Text>Nombre:</Text>
+          <TextInput style={styles.input} value={nombre} onChangeText={setNombre} placeholder="Nombre" />
 
-      <Text>Apellido:</Text>
-      <TextInput
-        placeholder="Apellido"
-        value={apellido}
-        onChangeText={setApellido}
-        style={styles.input}
-      />
+          <Text>Apellido:</Text>
+          <TextInput style={styles.input} value={apellido} onChangeText={setApellido} placeholder="Apellido" />
 
-      <Text>País:</Text>
-      <TextInput
-        placeholder="País"
-        value={pais}
-        onChangeText={setPais}
-        style={styles.input}
-      />
+          <Text>País:</Text>
+          <TextInput style={styles.input} value={pais} onChangeText={setPais} placeholder="País" />
 
-      <Text>Departamento:</Text>
-      <TextInput
-        placeholder="Departamento"
-        value={departamento}
-        onChangeText={setDepartamento}
-        style={styles.input}
-      />
+          <Text>Departamento:</Text>
+          <TextInput style={styles.input} value={departamento} onChangeText={setDepartamento} placeholder="Departamento" />
 
-      <Text>Ciudad:</Text>
-      <TextInput
-        placeholder="Ciudad"
-        value={ciudad}
-        onChangeText={setCiudad}
-        style={styles.input}
-      />
+          <Text>Ciudad:</Text>
+          <TextInput style={styles.input} value={ciudad} onChangeText={setCiudad} placeholder="Ciudad" />
 
-      <Text>Correo electrónico:</Text>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={styles.input}
-      />
+          <Text>Correo electrónico:</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-      <Text>Contraseña:</Text>
-      <TextInput
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+          <Text>Contraseña:</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Contraseña"
+            secureTextEntry
+          />
 
-      <Button title="Registrarse" onPress={handleRegister} />
-    </View>
+          <Button title="Registrarse" onPress={handleRegister} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    // ¡esto es clave! hace que el contenido “quiera” crecer y por tanto se pueda hacer scroll
+    flexGrow: 1,
+  },
   title: {
     fontSize: 22,
     marginBottom: 16,

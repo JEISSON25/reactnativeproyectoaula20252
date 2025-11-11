@@ -39,6 +39,8 @@ export default function CrearPublicacion({ navigation }) {
 
       setSaving(true);
 
+      Alert.alert("→ antes de addDoc");
+
       await addDoc(collection(db, "publicaciones"), {
         titulo: t,
         descripcion: d,
@@ -49,33 +51,29 @@ export default function CrearPublicacion({ navigation }) {
       });
 
       Alert.alert("Éxito", "Publicación creada.");
-      navigation.goBack();
+      navigation.navigate('Home');
+
     } catch (e) {
       console.log("Error al crear publicación:", e);
       Alert.alert("Error", e?.message || "No se pudo crear la publicación.");
     } finally {
       setSaving(false);
     }
-
-
-
   };
+
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 12 }}>
-        Nueva publicación
-      </Text>
+      <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 12 }}> Nueva publicación </Text>
 
       <Text style={{ marginBottom: 6 }}>Título</Text>
+
       <TextInput
-        placeholder="Ej: Intercambio teclado mecánico"
-        value={titulo}
-        onChangeText={setTitulo}
-        style={{ borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 12 }}
-      />
+        placeholder="Ej: Intercambio teclado mecánico" value={titulo} onChangeText={setTitulo}
+        style={{ borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 12 }} />
 
       <Text style={{ marginBottom: 6 }}>Descripción</Text>
+
       <TextInput
         placeholder="Describe el estado, condiciones del trueque, etc."
         value={descripcion}

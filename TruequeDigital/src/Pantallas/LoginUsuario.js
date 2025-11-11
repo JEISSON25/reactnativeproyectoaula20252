@@ -1,6 +1,6 @@
 // src/Pantallas/LoginUsuario.js
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Button, Alert, TouchableOpacity, ScrollView } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 
@@ -18,7 +18,7 @@ export default function LoginUsuario({ navigation }) {
   };
 
   return (
-    <View style={{ padding: 16, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ paddingBottom: 40 }} style={{ padding: 16 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} >
       <Text style={{ fontSize: 22, fontWeight: "bold" }}>Inicia sesión</Text>
       <TextInput
         placeholder="Email"
@@ -41,6 +41,6 @@ export default function LoginUsuario({ navigation }) {
           ¿No tienes cuenta? <Text style={{ fontWeight: "bold" }}>Crear una</Text>
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
