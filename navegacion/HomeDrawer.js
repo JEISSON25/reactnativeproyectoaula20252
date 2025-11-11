@@ -5,21 +5,29 @@ import { getAuth, signOut } from 'firebase/auth';
 
 import HomeScreen from '../screens/HomeScreen';
 import FavoritosScreen from '../screens/FavoritesScreen';
+import CrearRecetaScreen from '../screens/CrearRecetaScreen';
+import MisRecetasScreen from '../screens/MisRecetasScreen';
+import { useContext } from 'react';
+import { AuthContexto } from '../contextos/AuthContexto';
+import { auth } from '../firebaseConfig';
+import PlanSemanalScreen from '../screens/PlanSemanalScreen';
+import PlanesCreadosScreen from '../screens/PlanesCreadosScreen';
 
 const Drawer = createDrawerNavigator();
 
-// 🔹 Drawer personalizado
-function CustomDrawerContent(props) {
-  const auth = getAuth();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      // 🔸 Regresa al login (que está en el stack superior)
-      props.navigation.reset('InicioSesion'); 
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
+function CustomDrawerContent(props) {
+
+      const auth = getAuth();
+      const {cerrarSesion} = useContext(AuthContexto);
+
+      const handleLogout = async() => {
+        try{
+          await signOut(auth);
+          cerrarSesion();
+        }catch(error){
+          console.error('error al iniciar sesion: ', error)
+        }
   };
 
   return (
@@ -49,6 +57,26 @@ export default function HomeDrawer() {
         name="Favoritos"
         component={FavoritosScreen}
         options={{ title: 'Favoritos' }}
+      />
+      <Drawer.Screen
+        name="CrearRecetaScreen"
+        component={CrearRecetaScreen}
+        options={{ title: 'Crear recetas' }}
+      />
+      <Drawer.Screen
+        name="Mis Recetas"
+        component={MisRecetasScreen}
+        options={{ title: 'Mis Recetas' }}
+      />
+      <Drawer.Screen
+        name="Plan Semanal"
+        component={PlanSemanalScreen}
+        options={{ title: 'Crear Plan' }}
+      />
+      <Drawer.Screen
+        name="Planes Creados"
+        component={PlanesCreadosScreen}
+        options={{ title: 'Mi Plan' }}
       />
     </Drawer.Navigator>
   );

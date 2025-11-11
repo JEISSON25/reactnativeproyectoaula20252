@@ -1,33 +1,37 @@
-// firebaseConfig.js
-import { initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-} from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { 
+  getAuth, 
+  initializeAuth, 
+  getReactNativePersistence 
+} from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyB6k0KIpRo4S3fT1mLxbl6wmfbsMMG6L50",
   authDomain: "recetas-saludables-dc3af.firebaseapp.com",
   projectId: "recetas-saludables-dc3af",
-  storageBucket: "recetas-saludables-dc3af.firebasestorage.app",
+  storageBucket: "recetas-saludables-dc3af.appspot.com",
   messagingSenderId: "1082794697707",
   appId: "1:1082794697707:web:3aba5730c08983984aafae"
 };
 
-// Inicializa app
-const app = initializeApp(firebaseConfig);
+// evitar iniciar varias veces firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Autenticación persistente
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// avitar inicializar auth varias veces
+let auth;
+try {
+  auth = getAuth(app);
+} catch (e) {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+  });
+}
 
-// Firestore con cache offline persistente
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-});
-
-export { app, auth, db };
+export { app };
+export const firestore = getFirestore(app);
+export const storage = getStorage(app);
+export { auth };

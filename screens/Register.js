@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, Alert, StyleSheet } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
@@ -12,87 +12,118 @@ const Register = ({ navigation }) => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
 
-      // Mensaje de confirmación y redirección al Login
       Alert.alert('Registro exitoso', 'Tu cuenta fue creada correctamente', [
         { text: 'Continuar', onPress: () => navigation.navigate('Login') },
       ]);
 
-      setMensaje('✅ Usuario registrado correctamente');
+      setMensaje('Usuario registrado correctamente');
     } catch (error) {
-      setMensaje('❌ Usuario en uso o datos inválidos');
+      setMensaje('Usuario en uso o datos inválidos');
     }
   };
 
-  const inicioSes = async () => {
-      // redireccion a iniciar sesion
-      Alert.alert('Redireccion', 'en un momento te llevaremos', [
-        { text: 'Continuar', onPress: () => navigation.navigate('Login') },
-      ]);
-
-
+  const inicioSes = () => {
+    navigation.navigate('Login');
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 20, marginBottom: 20 }}>Registrate </Text>
-      
+    <View style={styles.container}>
+      <Text style={styles.title}>Únete a CookApp 🍳</Text>
 
       <TextInput
         placeholder="Correo electrónico"
         value={email}
         onChangeText={setEmail}
-        style={{
-          borderWidth: 1,
-          padding: 10,
-          marginVertical: 10,
-          width: '80%',
-        }}
+        style={styles.input}
         keyboardType="email-address"
         autoCapitalize="none"
+        placeholderTextColor="#a69f94"
       />
 
       <TextInput
         placeholder="Contraseña"
         value={password}
         onChangeText={setPassword}
-        style={{
-          borderWidth: 1,
-          padding: 10,
-          marginVertical: 10,
-          width: '80%',
-        }}
+        style={styles.input}
         secureTextEntry
+        placeholderTextColor="#a69f94"
       />
 
-      <Pressable
-        onPress={handleRegister}
-        style={{
-          marginTop: 20,
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          backgroundColor: 'blue',
-          borderRadius: 5,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 16 }}>Registrar</Text>
+      <Pressable style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Registrar</Text>
       </Pressable>
 
-      <Pressable
-        onPress={inicioSes}
-        style={{
-          marginTop: 20,
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          backgroundColor: 'blue',
-          borderRadius: 5,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 16 }}>Ir a inicio de sesión</Text>
+      <Pressable style={[styles.button, styles.buttonOutline]} onPress={inicioSes}>
+        <Text style={[styles.buttonText, styles.buttonOutlineText]}>Ir a inicio de sesión</Text>
       </Pressable>
 
-      {mensaje ? <Text style={{ marginTop: 20 }}>{mensaje}</Text> : null}
+      {mensaje ? <Text style={styles.mensaje}>{mensaje}</Text> : null}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff8f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 30,
+    color: '#d35400',
+    textAlign: 'center',
+  },
+  input: {
+    width: '100%',
+    backgroundColor: '#fffaf0',
+    padding: 15,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#f5d6b5',
+    marginVertical: 10,
+    fontSize: 16,
+    shadowColor: '#d9cbb7',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  button: {
+    width: '100%',
+    backgroundColor: '#f39c12', 
+    paddingVertical: 15,
+    borderRadius: 20,
+    marginTop: 20,
+    alignItems: 'center',
+    shadowColor: '#f1c40f',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#fffef9',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  buttonOutline: {
+    backgroundColor: '#fffaf0',
+    borderWidth: 1,
+    borderColor: '#f39c12',
+  },
+  buttonOutlineText: {
+    color: '#f39c12',
+  },
+  mensaje: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#e74c3c',
+    textAlign: 'center',
+  },
+});
 
 export default Register;
