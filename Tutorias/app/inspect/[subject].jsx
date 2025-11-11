@@ -14,7 +14,7 @@ const mapSchedule = (schedule = []) => {
   const first = schedule[0];
   if (!first) return null;
   const pad = (val) => String(val ?? 0).padStart(2, '0');
-  return `${first.day} · ${pad(first.hourStart)}:00 - ${pad(first.hourEnd)}:00`;
+  return `${first.day} ï¿½ ${pad(first.hourStart)}:00 - ${pad(first.hourEnd)}:00`;
 };
 
 // Screen entry. Uses params to fetch offers for the chosen subject.
@@ -67,13 +67,13 @@ export default function InspectSubjectScreen() {
 
   const handleInspect = async (offer) => {
     if (connectivity.isOffline) {
-      topAlert.show('Necesitas conexión a internet para ver los detalles.', 'info');
+      topAlert.show('Necesitas conexiï¿½n a internet para ver los detalles.', 'info');
       return;
     }
     setRowLoading((prev) => ({ ...prev, [offer.id]: true }));
     try {
       if (!ready || !user) {
-        topAlert.show('Debes iniciar sesión para reservar una tutoría', 'info');
+        topAlert.show('Debes iniciar sesiï¿½n para reservar una tutorï¿½a', 'info');
         return;
       }
       const max = Number(offer.maxStudents || 0);
@@ -108,14 +108,14 @@ export default function InspectSubjectScreen() {
 
       {(connectivity.isOffline || fromCache) && (
         <View style={styles.offlineBanner}>
-          <Text style={styles.offlineBannerText}>Datos guardados para uso sin conexión</Text>
+          <Text style={styles.offlineBannerText}>Datos guardados para uso sin conexiï¿½n</Text>
         </View>
       )}
 
       {loading && <Text style={styles.note}>Cargando</Text>}
       {empty && (
         <View style={styles.row}>
-          <Text style={styles.rowTitle}>No hay clases disponibles todavía.</Text>
+          <Text style={styles.rowTitle}>No hay clases disponibles todavï¿½a.</Text>
         </View>
       )}
 
@@ -130,7 +130,7 @@ export default function InspectSubjectScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{usernames[it.uid] || it.username || 'Docente'}</Text>
               <Text style={styles.rowSub}>
-                Cupos: {max === 0 ? 'Sin límite' : `${enrolled}/${max}`}
+                Cupos: {max === 0 ? 'Sin lï¿½mite' : `${enrolled}/${max}`}
               </Text>
               {firstSlot && (
                 <View style={styles.slotPill}>
