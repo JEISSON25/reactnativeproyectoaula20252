@@ -16,8 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.juanrojo.Tutorias"
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "output": "static",
@@ -35,12 +34,6 @@
         }
       ],
       "expo-router"
-    ],
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "b957c5e6-596b-45e9-9f7e-4d82c7adebfe"
-      }
-    }
+    ]
   }
 }

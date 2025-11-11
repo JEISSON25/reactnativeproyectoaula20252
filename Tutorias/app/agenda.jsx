@@ -68,8 +68,9 @@ export default function AgendaScreen() {
   }, [params.tab]);
 
   useEffect(() => {
+    // En modo offline mostramos un aviso informando que los cambios se sincronizan al reconectar.
     if (connectivity.isOffline) {
-      topAlert.show('Modo sin conexión: los cambios se sincronizarán cuando vuelvas a estar en línea.', 'info');
+      topAlert.show('Modo sin conexi�n: los cambios se sincronizar�n cuando vuelvas a estar en l�nea.', 'info');
     }
   }, [connectivity.isOffline, topAlert]);
 
@@ -163,9 +164,9 @@ export default function AgendaScreen() {
       });
 
       if (result.queued) {
-        topAlert.show('Cambio guardado sin conexión. Se sincronizará automáticamente.', 'info');
+        topAlert.show('Cambio guardado sin conexi�n. Se sincronizar� autom�ticamente.', 'info');
       } else if (nextStatus === RESERVATION_STATUS.CONFIRMED) {
-        topAlert.show('Reserva confirmada. ¡Nos vemos en clase!', 'success');
+        topAlert.show('Reserva confirmada. �Nos vemos en clase!', 'success');
       } else if (nextStatus === RESERVATION_STATUS.REJECTED) {
         topAlert.show('Solicitud rechazada.', 'info');
       } else if (nextStatus === RESERVATION_STATUS.CANCELLED) {
@@ -179,27 +180,22 @@ export default function AgendaScreen() {
     }
   };
 
-  if (!ready) return null;
-  if (!user) return null;
-
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: '#1B1E36' }}
       contentContainerStyle={{ padding: 16, paddingTop: (insets?.top ?? 0) + 12 }}
     >
-      <View style={{ alignSelf: 'stretch', paddingHorizontal: 20, paddingTop: (insets?.top ?? 0) + 0, marginBottom: 12, zIndex: 10, position: 'relative' }}>
+      <View style={{ alignSelf: 'stretch', marginBottom: 8, zIndex: 10, position: 'relative' }}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={20} color="#1B1E36" />
           <Text style={styles.backText}>Volver</Text>
         </TouchableOpacity>
       </View>
-
       <Text style={styles.title}>Agenda</Text>
 
       {(offlineMode || fromCache) && (
         <View style={styles.offlineBadge}>
           <MaterialIcons name="cloud-off" size={18} color="#ffedd5" />
-          <Text style={styles.offlineBadgeText}>Mostrando datos sin conexión</Text>
+          <Text style={styles.offlineBadgeText}>Mostrando datos sin conexi�n</Text>
         </View>
       )}
 
@@ -243,7 +239,7 @@ export default function AgendaScreen() {
           )}
           {activeTab === 'pending' && studentPending.map((item) => (
             <View key={item.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{item.subjectName || 'Tutoría'}</Text>
+              <Text style={styles.cardTitle}>{item.subjectName || 'Tutor�a'}</Text>
               <Text style={styles.cardSubtitle}>Docente: {item.teacherDisplayName || item.teacherId}</Text>
               <Text style={styles.cardSlot}>{formatSlot(item.slot)}</Text>
               <Text style={styles.cardStatus}>Estado: {item.statusLabel}</Text>
@@ -260,7 +256,7 @@ export default function AgendaScreen() {
           )}
           {activeTab === 'confirmed' && studentConfirmed.map((item) => (
             <View key={item.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{item.subjectName || 'Tutoría'}</Text>
+              <Text style={styles.cardTitle}>{item.subjectName || 'Tutor�a'}</Text>
               <Text style={styles.cardSubtitle}>Docente: {item.teacherDisplayName || item.teacherId}</Text>
               <Text style={styles.cardSlot}>{formatSlot(item.slot)}</Text>
               <Text style={styles.cardStatus}>Estado: {item.statusLabel}</Text>
@@ -309,7 +305,7 @@ export default function AgendaScreen() {
           )}
           {activeTab === 'pending' && teacherPending.map((item) => (
             <View key={item.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{item.subjectName || 'Tutoría'}</Text>
+              <Text style={styles.cardTitle}>{item.subjectName || 'Tutor�a'}</Text>
               <Text style={styles.cardSubtitle}>Estudiante: {item.studentDisplayName || item.studentId}</Text>
               <Text style={styles.cardSlot}>{formatSlot(item.slot)}</Text>
               {item._pendingSync && (
@@ -349,7 +345,7 @@ export default function AgendaScreen() {
           )}
           {activeTab === 'confirmed' && teacherConfirmed.map((item) => (
             <View key={item.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{item.subjectName || 'Tutoría'}</Text>
+              <Text style={styles.cardTitle}>{item.subjectName || 'Tutor�a'}</Text>
               <Text style={styles.cardSubtitle}>Estudiante: {item.studentDisplayName || item.studentId}</Text>
               <Text style={styles.cardSlot}>{formatSlot(item.slot)}</Text>
               <Text style={styles.cardStatus}>Estado: {item.statusLabel}</Text>
@@ -378,7 +374,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
-  backText: { color: '#1B1E36', fontWeight: '800', marginLeft: 6 },
+  backText: { color: '#1B1E36', fontWeight: '800' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   loadingText: { color: '#C7C9D9' },
   emptyText: { color: '#C7C9D9', marginTop: 10 },
