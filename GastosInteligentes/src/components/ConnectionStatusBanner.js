@@ -37,8 +37,12 @@ const ConnectionStatusBanner = () => {
 
 const styles = StyleSheet.create({
   banner: {
-    padding: 10,
-    marginTop: 20,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    paddingVertical: 10,
     alignItems: "center",
   },
   text: {
@@ -46,5 +50,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
 
 export default ConnectionStatusBanner;

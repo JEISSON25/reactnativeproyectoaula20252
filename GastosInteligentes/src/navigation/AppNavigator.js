@@ -8,7 +8,7 @@ import TransactionsScreen from "../screens/App/TransactionsScreen";
 import TransactionFormScreen from "../screens/App/TransactionFormScreen";
 import SettingsScreen from "../screens/App/SettingsScreen";
 import ReportsScreen from "../screens/App/ReportsScreen";
-
+import GoalsScreen from "../screens/App/GoalsScreen"; // 👈 NUEVA PANTALLA
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -19,15 +19,19 @@ const AppTab = () => (
       headerShown: false,
       tabBarIcon: ({ focused, color, size }) => {
         let iconName;
+
         if (route.name === "Home") {
           iconName = focused ? "home" : "home-outline";
         } else if (route.name === "Transactions") {
           iconName = focused ? "list" : "list-outline";
         } else if (route.name === "Reports") {
           iconName = focused ? "bar-chart" : "bar-chart-outline";
+        } else if (route.name === "Goals") {
+          iconName = focused ? "trophy" : "trophy-outline"; // 🏆 Ícono de metas
         } else if (route.name === "Settings") {
           iconName = focused ? "settings" : "settings-outline";
         }
+
         return <Ionicons name={iconName} size={size} color={color} />;
       },
       tabBarActiveTintColor: "#2c3e50",
@@ -40,11 +44,23 @@ const AppTab = () => (
       component={TransactionsScreen}
       options={{ title: "Transacciones" }}
     />
-    <Tab.Screen name="Reports" component={ReportsScreen} options={{title: "Reportes"}}/>
-    <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Ajustes" }} />
+    <Tab.Screen
+      name="Reports"
+      component={ReportsScreen}
+      options={{ title: "Reportes" }}
+    />
+    <Tab.Screen
+      name="Goals"
+      component={GoalsScreen}
+      options={{ title: "Metas" }} // 👈 Nueva pestaña
+    />
+    <Tab.Screen
+      name="Settings"
+      component={SettingsScreen}
+      options={{ title: "Ajustes" }}
+    />
   </Tab.Navigator>
 );
-
 
 const AppNavigator = () => (
   <Stack.Navigator>
@@ -56,7 +72,7 @@ const AppNavigator = () => (
     <Stack.Screen
       name="TransactionForm"
       component={TransactionFormScreen}
-      options={{ title: "Nueva transacción"}}
+      options={{ title: "Nueva transacción" }}
     />
   </Stack.Navigator>
 );

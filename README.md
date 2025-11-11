@@ -1,10 +1,4 @@
 PROYECTOS DE AULA
 
 Grupo 4
-Variables de entorno:
-API_KEY=AIzaSyCabvj-NH8m7PejkgEvsVgIabgBW0qOcZM
-AUTH_DOMAIN=gastos-personales-app.firebaseapp.com
-PROJECT_ID=gastos-personales-app
-STORAGE_BUCKET=gastos-personales-app.firebasestorage.app
-MESSAGING_SENDER_ID=407875236224
-APP_ID=1:407875236224:web:ff35e7cf85f32e2ae91165
+Link de APK: https://expo.dev/artifacts/eas/inbhK1ZGKAz8fV3fuoxUkK.apk

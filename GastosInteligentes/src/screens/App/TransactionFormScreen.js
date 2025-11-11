@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, Pressable, Platform } from "react-native";
+import React, { useState, useLayoutEffect } from "react";
+import { View, Text, TextInput, Button, Pressable, Platform, Alert } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Chip from "../../components/Chip";
 import { useTransactionForm } from "../../hooks/useTransactionForm";
-import { useLayoutEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { getGoalsByUser } from "../../services/goalService";
+import { checkGoalsProgress } from "../../utils/checkGoals"
+import { getTransactionByUser } from "../../services/transactionService";
 
 const toYMD = (d) => {
   const pad = (n) => String(n).padStart(2, "0");
@@ -12,6 +15,7 @@ const toYMD = (d) => {
 
 const TransactionFormScreen = ({ route, navigation }) => {
   const item = route.params?.item;
+  const { user } = useAuth();
 
   const {
     editing,
@@ -46,6 +50,20 @@ const TransactionFormScreen = ({ route, navigation }) => {
     });
   }, [navigation, editing]);
 
+  const handleSave = async () => {
+    try {
+      const savedTransaction = await onSubmit();
+      const goals = await getGoalsByUser(user.uid);
+      const allTransactions = await getTransactionByUser(user.uid);
+      await checkGoalsProgress(allTransactions, goals);
+
+      Alert.alert("Éxito", "Transacción guardada correctamente.");
+    } catch (error) {
+      console.error("Error guardando transacción:", error);
+      Alert.alert("Error", "No se pudo guardar la transacción.");
+    }
+  };
+
   return (
     <View style={{ flex: 1, padding: 16 }}>
       {/* Tipo */}
@@ -79,7 +97,7 @@ const TransactionFormScreen = ({ route, navigation }) => {
         }}
       />
 
-      {/* Descripcion */}
+      {/* Descripción */}
       <Text style={{ fontWeight: "bold" }}>Descripción</Text>
       <TextInput
         placeholder={descriptionPlaceholder}
@@ -128,10 +146,9 @@ const TransactionFormScreen = ({ route, navigation }) => {
 
       <Button
         title={loading ? "Guardando..." : (editing ? "Guardar cambios" : "Crear transacción")}
-        onPress={onSubmit}
+        onPress={handleSave}
         disabled={loading}
       />
-
     </View>
   );
 };
