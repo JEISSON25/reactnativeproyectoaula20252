@@ -1,44 +1,17 @@
-/*import React, { useContext } from 'react';
-import { View, Text, Button } from 'react-native';
-import { AuthContexto } from '../contextos/AuthContexto';
-const HomeScreen = () => {
- const { usuario, cerrarSesion } = useContext(AuthContexto);
- return (
- <View style={{ flex: 1, justifyContent: 'center', alignItems:
-'center' }}>
- {usuario ? (
- <>
- <Text>¡Bienvenido, {usuario.nombre}! </Text>
- <Button title="Cerrar sesión " onPress={cerrarSesion} />
-
- </>
- ) : (
- <Text>No has iniciado sesión </Text>
- )}
- </View>
- );
-};
-export default HomeScreen;*/
-import React, { useState, useLayoutEffect, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  StyleSheet,
-  Pressable,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {View,Text,FlatList,Image,StyleSheet,Pressable,TextInput,TouchableOpacity,} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import {saveOfflineRecipe,getOfflineRecipes,clearSyncedRecipes,markRecipeSynced,} from '../database';
+import { firestore, auth } from '../firebaseConfig';
+import { collection, doc, setDoc } from 'firebase/firestore';
 
-const recetas = [
+const recetasPrecargadas = [
   {
     id: '1',
     nombre: 'Ensalada de Quinoa',
     descripcion: 'Quinoa con vegetales frescos y aderezo ligero.',
-    foto: require('../assets/recursos/ensalada-quinoa.jpg'),
+    foto: 'https://res.cloudinary.com/dt2kwkgch/image/upload/v1762871839/ensalada-quinoa_lxgwhj.jpg',
     categoria: 'Saludable',
     ingredientes: ['Quinoa', 'Tomate', 'Pepino', 'Zanahoria', 'Aceite de oliva'],
     pasos: [
@@ -47,12 +20,13 @@ const recetas = [
       'Mezclar todo con aceite de oliva.',
       'Servir fresco.',
     ],
+    favorito: false,
   },
   {
     id: '2',
     nombre: 'Smoothie Verde',
     descripcion: 'Batido de espinaca, plátano y manzana.',
-    foto: require('../assets/recursos/smoothie-verde.jpg'),
+    foto: 'https://res.cloudinary.com/dt2kwkgch/image/upload/v1762871846/smoothie-verde_akueq3.jpg',
     categoria: 'Bebida',
     ingredientes: ['Espinaca', 'Plátano', 'Manzana', 'Agua', 'Hielo'],
     pasos: [
@@ -60,12 +34,13 @@ const recetas = [
       'Licuar hasta obtener una mezcla homogénea.',
       'Servir en un vaso grande.',
     ],
+    favorito: false,
   },
   {
     id: '3',
     nombre: 'Bowl de Avena',
     descripcion: 'Avena cocida con frutas y nueces.',
-    foto: require('../assets/recursos/bowl-avena.jpg'),
+    foto: 'https://res.cloudinary.com/dt2kwkgch/image/upload/v1762871824/bowl-avena_mh7flv.jpg',
     categoria: 'Desayuno',
     ingredientes: ['Avena', 'Leche', 'Frutas', 'Nueces', 'Miel'],
     pasos: [
@@ -74,58 +49,127 @@ const recetas = [
       'Endulzar con miel al gusto.',
       'Servir caliente o frío.',
     ],
+    favorito: false,
   },
 ];
 
 const HomeScreen = ({ navigation }) => {
+  const [recetas, setRecetas] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
-  const [favoritos, setFavoritos] = useState([]);
+  const [isOnline, setIsOnline] = useState(true);
 
-  // 🔹 Cargar favoritos guardados (offline)
   useEffect(() => {
-    const cargarFavoritos = async () => {
-      const data = await AsyncStorage.getItem('favoritos');
-      if (data) setFavoritos(JSON.parse(data));
-    };
-    cargarFavoritos();
+    cargarRecetas();
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(state.isConnected);
+      if (state.isConnected) sincronizarRecetas();
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // 🔹 Guardar favoritos cuando cambian
-  useEffect(() => {
-    AsyncStorage.setItem('favoritos', JSON.stringify(favoritos));
-  }, [favoritos]);
+  const cargarRecetas = async () => {
+    try {
+      const existentes = await getOfflineRecipes();
 
-  // 🔹 Agregar o quitar favoritos
-  const toggleFavorito = (receta) => {
-    const esFavorita = favoritos.some((f) => f.id === receta.id);
-    if (esFavorita) {
-      setFavoritos(favoritos.filter((f) => f.id !== receta.id));
-    } else {
-      setFavoritos([...favoritos, receta]);
+      if (existentes.length === 0) {
+        for (let r of recetasPrecargadas) {
+          await saveOfflineRecipe(r);
+        }
+      }
+
+      const todas = await getOfflineRecipes();
+      setRecetas(
+        todas.map((r) => ({
+          ...r,
+          id: r.id || Math.random().toString(), // por si no hay id
+          nombre: r.nombre || 'Sin nombre',
+          descripcion: r.descripcion || '',
+          foto:
+            r.foto ||
+            'https://cdn.pixabay.com/photo/2017/02/23/13/05/smoothie-2096909_1280.jpg',
+          ingredientes: Array.isArray(r.ingredientes) ? r.ingredientes : [],
+          pasos: Array.isArray(r.pasos) ? r.pasos : [],
+          favorito: r.favorito ?? false,
+          categoria: r.categoria || 'Otra',
+        }))
+      );
+    } catch (error) {
+      console.error('Error cargando recetas:', error);
     }
   };
 
-  // 🔹 Icono de menú hamburguesa
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 15 }}
-          onPress={() => navigation.openDrawer()}
-        >
-          <Ionicons name="menu" size={28} color="black" />
-        </TouchableOpacity>
-      ),
-      title: 'Recetas Saludables',
-    });
-  }, [navigation]);
+  const sincronizarRecetas = async () => {
+    try {
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) return;
 
-  // 🔹 Filtro de recetas
+      const todas = await getOfflineRecipes();
+
+      for (let receta of todas) {
+        await setDoc(
+          doc(
+            collection(firestore, 'recetas'),
+            receta.id?.toString() || new Date().getTime().toString()
+          ),
+          {
+            ...receta,
+            usuarioEmail: auth.currentUser?.email || 'anonimo',
+            nombre: receta.nombre || 'Sin nombre',
+            descripcion: receta.descripcion || '',
+            foto:
+              receta.foto ||
+              'https://cdn.pixabay.com/photo/2017/02/23/13/05/smoothie-2096909_1280.jpg',
+            ingredientes: Array.isArray(receta.ingredientes)
+              ? receta.ingredientes
+              : [],
+            pasos: Array.isArray(receta.pasos) ? receta.pasos : [],
+            favorito: receta.favorito ?? false,
+            categoria: receta.categoria || 'Otra',
+          }
+        );
+        await markRecipeSynced(receta.id);
+      }
+
+      await clearSyncedRecipes();
+      console.log('✅ Recetas sincronizadas correctamente');
+
+      await cargarRecetas(); //refrescar lista para sincronizar
+    } catch (error) {
+      console.error('Error sincronizando recetas:', error);
+    }
+  };
+
+  const toggleFavorito = async (receta) => {
+    const actualizado = {
+      ...receta,
+      favorito: !receta.favorito,
+    };
+    await saveOfflineRecipe(actualizado);
+    setRecetas((prev) =>
+      prev.map((r) => (r.id === receta.id ? actualizado : r))
+    );
+
+    if (isOnline) {
+      await setDoc(
+        doc(
+          collection(firestore, 'recetas'),
+          receta.id?.toString() || new Date().getTime().toString()
+        ),
+        {
+          ...actualizado,
+          usuarioEmail: auth.currentUser?.email || 'anonimo',
+        }
+      );
+    }
+  };
+
   const recetasFiltradas = recetas.filter((r) => {
     const coincideBusqueda =
-      r.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      r.ingredientes.some((ing) =>
+      r.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      r.ingredientes?.some((ing) =>
         ing.toLowerCase().includes(busqueda.toLowerCase())
       );
     const coincideCategoria = categoriaSeleccionada
@@ -134,40 +178,49 @@ const HomeScreen = ({ navigation }) => {
     return coincideBusqueda && coincideCategoria;
   });
 
-  // 🔹 Renderizar cada receta
-  const renderItem = ({ item }) => {
-    const esFavorita = favoritos.some((f) => f.id === item.id);
-    return (
-      <View style={styles.recetaContainer}>
-        <Pressable
-          onPress={() => navigation.navigate('DetalleRecetaScreen', { ...item })}
-          style={{ flexDirection: 'row', flex: 1 }}
-        >
-          <Image source={item.foto} style={styles.imagen} />
-          <View style={styles.textoContainer}>
-            <Text style={styles.nombre}>{item.nombre}</Text>
-            <Text style={styles.descripcion}>{item.descripcion}</Text>
-          </View>
-        </Pressable>
+  const renderItem = ({ item }) => (
+    <View style={styles.recetaContainer}>
+      <Pressable
+        onPress={() => navigation.navigate('DetalleRecetaScreen', { receta: item })}
+        style={{ flexDirection: 'row', flex: 1 }}
+      >
+        <Image
+          source={{
+            uri:
+              item.foto ||
+              'https://cdn.pixabay.com/photo/2017/02/23/13/05/smoothie-2096909_1280.jpg',
+          }}
+          style={styles.imagen}
+        />
+        <View style={styles.textoContainer}>
+          <Text style={styles.nombre}>{item.nombre || 'Sin nombre'}</Text>
+          <Text style={styles.descripcion}>{item.descripcion || ''}</Text>
+        </View>
+      </Pressable>
 
-        {/* ❤️ Botón de favorito */}
-        <TouchableOpacity
-          onPress={() => toggleFavorito(item)}
-          style={styles.botonFavorito}
-        >
-          <Ionicons
-            name={esFavorita ? 'heart' : 'heart-outline'}
-            size={26}
-            color={esFavorita ? 'red' : 'gray'}
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+      <TouchableOpacity
+        onPress={() => toggleFavorito(item)}
+        style={styles.botonFavorito}
+      >
+        <Ionicons
+          name={item.favorito ? 'heart' : 'heart-outline'}
+          size={26}
+          color={item.favorito ? 'red' : 'gray'}
+        />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={{ flex: 1, padding: 16, backgroundColor: '#f7fff7' }}>
-      {/* 🔍 Barra de búsqueda */}
+      {!isOnline && (
+        <View style={{ backgroundColor: 'red', padding: 10 }}>
+          <Text style={{ color: 'white', textAlign: 'center' }}>
+            Modo offline: los cambios se sincronizarán cuando tengas internet
+          </Text>
+        </View>
+      )}
+
       <View style={styles.barraBusqueda}>
         <TextInput
           placeholder="Buscar por nombre o ingrediente..."
@@ -180,7 +233,6 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* 🟢 Filtros */}
       <View style={styles.filtros}>
         {['Saludable', 'Bebida', 'Desayuno'].map((cat) => (
           <TouchableOpacity
@@ -190,9 +242,7 @@ const HomeScreen = ({ navigation }) => {
               categoriaSeleccionada === cat && styles.botonActivo,
             ]}
             onPress={() =>
-              setCategoriaSeleccionada(
-                categoriaSeleccionada === cat ? null : cat
-              )
+              setCategoriaSeleccionada(categoriaSeleccionada === cat ? null : cat)
             }
           >
             <Text
@@ -207,12 +257,11 @@ const HomeScreen = ({ navigation }) => {
         ))}
       </View>
 
-      {/* 📋 Lista de recetas */}
       {recetasFiltradas.length > 0 ? (
         <FlatList
           data={recetasFiltradas}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
           style={{ marginTop: 10 }}
         />
       ) : (
@@ -222,7 +271,6 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-// 🎨 Estilos
 const styles = StyleSheet.create({
   barraBusqueda: {
     flexDirection: 'row',
@@ -234,15 +282,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 12,
   },
-  input: {
-    flex: 1,
-    padding: 8,
-  },
-  filtros: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
-  },
+  input: { flex: 1, padding: 8 },
+  filtros: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
   botonFiltro: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -250,16 +291,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderColor: '#5bb450',
   },
-  botonActivo: {
-    backgroundColor: '#5bb450',
-  },
-  textoFiltro: {
-    color: '#333',
-  },
-  textoActivo: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  botonActivo: { backgroundColor: '#5bb450' },
+  textoFiltro: { color: '#333' },
+  textoActivo: { color: '#fff', fontWeight: 'bold' },
   recetaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -269,32 +303,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 2,
   },
-  imagen: {
-    width: 100,
-    height: 100,
-  },
-  textoContainer: {
-    flex: 1,
-    padding: 10,
-    justifyContent: 'center',
-  },
-  nombre: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  descripcion: {
-    color: '#000',
-    marginTop: 5,
-  },
-  botonFavorito: {
-    padding: 10,
-  },
-  sinResultados: {
-    textAlign: 'center',
-    marginTop: 30,
-    fontSize: 16,
-    color: '#777',
-  },
+  imagen: { width: 100, height: 100 },
+  textoContainer: { flex: 1, padding: 10, justifyContent: 'center' },
+  nombre: { fontWeight: 'bold', fontSize: 16 },
+  descripcion: { color: '#000', marginTop: 5 },
+  botonFavorito: { padding: 10 },
+  sinResultados: { textAlign: 'center', marginTop: 30, fontSize: 16, color: '#777' },
 });
 
 export default HomeScreen;

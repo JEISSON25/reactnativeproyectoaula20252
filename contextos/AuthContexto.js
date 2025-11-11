@@ -1,5 +1,6 @@
 import React, { createContext, useState } from 'react';
 export const AuthContexto = createContext();
+
 export const ProveedorAuth = ({ children }) => {
  const [usuario, setUsuario] = useState(null);
  const iniciarSesion = (datosUsuario) => {

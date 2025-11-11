@@ -14,7 +14,7 @@ const CustomDrawer = (props) => {
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{ name: 'LoginScreen' }], // 👈 usa el nombre exacto de tu ruta
+          routes: [{ name: 'LoginScreen' }],
         })
       );
     } catch (error) {
@@ -27,7 +27,7 @@ const CustomDrawer = (props) => {
       <DrawerItemList {...props} />
       <View style={styles.logoutContainer}>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>🚪 Cerrar sesión</Text>
+          <Text style={styles.logoutText}> Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
     </DrawerContentScrollView>
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 15,
     marginTop: 20,
-    marginBottom: 30, // 👈 sube el botón
+    marginBottom: 30, 
   },
   logoutButton: {
     backgroundColor: '#ff4d4d',

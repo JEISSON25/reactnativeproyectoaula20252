@@ -6,7 +6,7 @@ const FavoritosContexto = createContext();
 export const ProveedorFavoritos = ({ children }) => {
   const [favoritos, setFavoritos] = useState([]);
 
-  // 🔹 Cargar favoritos desde almacenamiento local al iniciar la app
+  
   useEffect(() => {
     const cargarFavoritos = async () => {
       try {
@@ -19,18 +19,23 @@ export const ProveedorFavoritos = ({ children }) => {
     cargarFavoritos();
   }, []);
 
-  // 🔹 Guardar favoritos en almacenamiento local cada vez que cambian
+  
   useEffect(() => {
     AsyncStorage.setItem('favoritos', JSON.stringify(favoritos));
   }, [favoritos]);
 
   const toggleFavorito = (receta) => {
-    const existe = favoritos.some((fav) => fav.id === receta.id);
-    if (existe) {
-      setFavoritos(favoritos.filter((fav) => fav.id !== receta.id));
-    } else {
-      setFavoritos([...favoritos, receta]);
-    }
+    db.transaccion(tx=>{
+      tx.executeSql(
+        'update recetas set favorito = ? where id = ? and usuarioId = ?',
+        [receta.favorito ? 0 : 1, receta.id, currentUserId],
+        (_, result)=>{
+          setFavoritos(prev=> 
+            prev.some(f => f.id === receta.id) ? prev.filter(f=> f.id !== receta.id) : [...prev, receta] 
+          );
+        }
+      );
+    });
   };
 
   const esFavorito = (id) => favoritos.some((fav) => fav.id === id);
