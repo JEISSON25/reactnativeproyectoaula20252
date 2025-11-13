@@ -7,7 +7,8 @@
     "icon": "./assets/images/LOGO-SPLASH.png",
     "scheme": "Trainfo",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "jsEngine": "jsc",
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -17,14 +18,22 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
-
+      "edgeToEdgeEnabled": true,
+      "useNextNotificationsApi": true
     },
     "splash": {
       "image": "./assets/images/LOGO-SPLASH.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D47A1" 
+      "backgroundColor": "#0D47A1"
     },
-    "web": {}
+    "web": {},
+    "extra": {
+      "eas": {
+        "projectId": "2459c6f3-abc3-447c-8f22-b447435af475"
+      }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }

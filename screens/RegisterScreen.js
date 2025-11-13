@@ -12,43 +12,77 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth, db } from "../firebaseConfig";
+import { useOffline } from "../context/OfflineContext";
+import sqlite from "../context/sqlite";
+import { auth, db as firestoreDb } from "../firebaseConfig";
 
 const RegisterScreen = ({ navigation }) => {
+  const { isAppOnline } = useOffline();
   const [username, setUsername] = useState("");
   const [realName, setRealName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // esto lo hizo camilo pa registrar usuarios y guardarlos local si no hay red
   const handleRegister = async () => {
     if (!username || !realName || !email || !password) {
-      Alert.alert("Error", "Por favor, completa todos los campos");
+      Alert.alert("Error", "completa todos los campos ome");
       return;
     }
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      await sqlite.initDB();
 
-      const user = userCredential.user;
+      if (isAppOnline) {
+        console.log("intentando registrar el man en firebase...");
 
-      // Guardamos datos adicionales en Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        username,
-        realName,
-        email,
-      });
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-      Alert.alert("Éxito", "Cuenta creada correctamente");
+        await setDoc(doc(firestoreDb, "users", user.uid), {
+          uid: user.uid,
+          username,
+          realName,
+          email,
+        });
+
+        await sqlite.saveLocalUser({
+          uid: user.uid,
+          email,
+          username,
+          plainPassword: password,
+          isSynced: 1,
+        });
+
+        console.log("usuario guardao en firebase:", email);
+      } else {
+        console.log("guardando usuario local porque no hay red...");
+
+        const existing = await sqlite.getLocalUserByEmail(email);
+        if (existing) {
+          Alert.alert("aviso", "ese correo ya esta guardado aqui");
+          setLoading(false);
+          return;
+        }
+
+        await sqlite.saveLocalUser({
+          uid: null,
+          email,
+          username,
+          plainPassword: password,
+          isSynced: 0,
+        });
+
+        console.log("usuario guardao local, se sincroniza despues");
+        Alert.alert("modo offline", "cuenta guardada localmente, se sincroniza cuando haya internet");
+      }
+
+      navigation.navigate("Login");
     } catch (error) {
-      console.error("Error de registro:", error.code, error.message);
-      Alert.alert("Error", "No se pudo crear la cuenta");
+      console.log("error raro registrando el usuario:", error);
+      Alert.alert("error", "no se pudo crear la cuenta, intente otra vez");
     } finally {
       setLoading(false);
     }
@@ -59,72 +93,57 @@ const RegisterScreen = ({ navigation }) => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>Crear Cuenta</Text>
-        <Text style={styles.subtitle}>Regístrate para continuar</Text>
+      <View style={styles.box}>
+        <Text style={styles.title}>crear cuenta</Text>
 
-        {/* Username */}
         <TextInput
           style={styles.input}
-          placeholder="Nombre de usuario"
+          placeholder="nombre de usuario"
           placeholderTextColor="#888"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
         />
-
-        {/* Nombre real */}
         <TextInput
           style={styles.input}
-          placeholder="Nombre real"
+          placeholder="nombre real"
           placeholderTextColor="#888"
           value={realName}
           onChangeText={setRealName}
         />
-
-        {/* Correo */}
         <TextInput
           style={styles.input}
-          placeholder="Correo electrónico"
+          placeholder="correo electronico"
           placeholderTextColor="#888"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-
-        {/* Contraseña */}
         <TextInput
           style={styles.input}
-          placeholder="Contraseña"
+          placeholder="contrasena"
           placeholderTextColor="#888"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        {/* Botón */}
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={styles.button}
           onPress={handleRegister}
           disabled={loading}
-          activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Registrarse</Text>
+            <Text style={styles.buttonText}>registrarse</Text>
           )}
         </TouchableOpacity>
 
-        {/* Link a login */}
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate("Login")}
-        >
-          <Text style={styles.linkText}>
-            ¿Ya tienes cuenta?{" "}
-            <Text style={styles.linkHighlight}>Inicia sesión</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.link}>
+            no tiene cuenta? <Text style={styles.linkHighlight}>inicie sesion</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -132,76 +151,16 @@ const RegisterScreen = ({ navigation }) => {
   );
 };
 
+// att andrey: revise que los estilos queden parejos con los demas screens
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212", // negro de fondo
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  card: {
-    width: "100%",
-    backgroundColor: "#1E1E1E", // gris oscuro para contraste
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#FFA500", // naranja
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#ccc",
-    marginBottom: 25,
-  },
-  input: {
-    backgroundColor: "#2A2A2A", // gris más claro
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 15,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: "#444",
-    color: "#fff",
-  },
-  button: {
-    backgroundColor: "#FFA500", // naranja
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 15,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    backgroundColor: "#cc8400", // naranja apagado
-  },
-  buttonText: {
-    color: "#121212",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  linkButton: {
-    marginTop: 10,
-  },
-  linkText: {
-    textAlign: "center",
-    fontSize: 14,
-    color: "#ccc",
-  },
-  linkHighlight: {
-    color: "#FFA500",
-    fontWeight: "bold",
-  },
+  container: { flex: 1, backgroundColor: "#121212", justifyContent: "center", alignItems: "center", padding: 10 },
+  box: { width: "100%" },
+  title: { color: "#FF6B00", fontSize: 20, textAlign: "center", marginBottom: 15 },
+  input: { backgroundColor: "#1a1a1a", color: "#fff", padding: 10, marginBottom: 10 },
+  button: { backgroundColor: "#FF6B00", padding: 10, alignItems: "center", marginTop: 5 },
+  buttonText: { color: "#fff" },
+  link: { color: "#ccc", textAlign: "center", marginTop: 15 },
+  linkHighlight: { color: "#FF6B00" },
 });
 
 export default RegisterScreen;

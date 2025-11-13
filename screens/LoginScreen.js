@@ -12,17 +12,22 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth, db } from "../firebaseConfig";
+import { useAuth } from "../context/AuthContext";
+import { useOffline } from "../context/OfflineContext";
+import sqlite from "../context/sqlite";
+import { auth, db as firestoreDb } from "../firebaseConfig";
 
-// Pantalla de Login
 const LoginScreen = ({ navigation }) => {
-  const [identifier, setIdentifier] = useState(""); // correo o username
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { signInLocal } = useAuth();
+  const { isAppOnline } = useOffline();
 
+  // hecho por santiago pa manejar inicio de sesion online y offline
   const handleLogin = async () => {
     if (!identifier || !password) {
-      Alert.alert("Error", "Por favor, completa todos los campos");
+      Alert.alert("error", "llene todos los campos, parcero");
       return;
     }
 
@@ -30,26 +35,40 @@ const LoginScreen = ({ navigation }) => {
     try {
       let emailToLogin = identifier;
 
-      // Si no contiene "@", asumimos que es un username
+      // si el man pone usuario en vez de correo
       if (!identifier.includes("@")) {
-        const q = query(
-          collection(db, "users"),
-          where("username", "==", identifier)
-        );
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          throw new Error("Usuario no encontrado");
+        if (isAppOnline) {
+          console.log("buscando el usuario en firebase...");
+          const q = query(
+            collection(firestoreDb, "users"),
+            where("username", "==", identifier)
+          );
+          const snapshot = await getDocs(q);
+          if (snapshot.empty) throw new Error("usuario no encontrado");
+          emailToLogin = snapshot.docs[0].data().email;
+        } else {
+          console.log("modo offline, buscando usuario local...");
+          const users = await sqlite.getAllLocalUsers();
+          const found = users.find((u) => u.username === identifier);
+          if (!found) throw new Error("usuario no encontrado (offline)");
+          emailToLogin = found.email;
         }
-
-        // Tomamos el correo del usuario encontrado
-        emailToLogin = querySnapshot.docs[0].data().email;
       }
 
-      await signInWithEmailAndPassword(auth, emailToLogin, password);
+      if (isAppOnline) {
+        console.log("intentando iniciar sesion normal...");
+        await signInWithEmailAndPassword(auth, emailToLogin, password);
+        console.log("inicio de sesion exitoso con firebase:", emailToLogin);
+      } else {
+        console.log("verificando datos locales pa login offline...");
+        const localUser = await sqlite.verifyLocalPassword(emailToLogin, password);
+        if (!localUser) throw new Error("credenciales incorrectas (offline)");
+        signInLocal(localUser);
+        Alert.alert("modo offline", "inicio de sesion local exitoso");
+      }
     } catch (error) {
-      console.error("Error de inicio de sesión:", error.code, error.message);
-      Alert.alert("Error", "Credenciales incorrectas. Verifica tus datos.");
+      console.log("error en el login:", error);
+      Alert.alert("error", error.message || "datos incorrectos, revise bien");
     } finally {
       setLoading(false);
     }
@@ -60,52 +79,42 @@ const LoginScreen = ({ navigation }) => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>Entrenador Personal</Text>
-        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+      <View style={styles.inner}>
+        <Text style={styles.title}>entrenador personal</Text>
+        <Text style={styles.subtitle}>inicie sesion para continuar</Text>
 
-        {/* Input correo o usuario */}
         <TextInput
           style={styles.input}
-          placeholder="Correo o Nombre de Usuario"
-          placeholderTextColor="#888"
+          placeholder="correo o usuario"
+          placeholderTextColor="#777"
           value={identifier}
           onChangeText={setIdentifier}
           autoCapitalize="none"
         />
-
-        {/* Input contraseña */}
         <TextInput
           style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#888"
+          placeholder="contrasena"
+          placeholderTextColor="#777"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        {/* Botón login */}
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={styles.button}
           onPress={handleLogin}
           disabled={loading}
-          activeOpacity={0.85}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+            <Text style={styles.buttonText}>iniciar sesion</Text>
           )}
         </TouchableOpacity>
 
-        {/* Link a registro */}
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate("Register")}
-        >
-          <Text style={styles.linkText}>
-            ¿No tienes cuenta?{" "}
-            <Text style={styles.linkHighlight}>Regístrate aquí</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+          <Text style={styles.link}>
+            no tiene cuenta? <Text style={styles.linkHighlight}>registrese aqui</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -113,81 +122,53 @@ const LoginScreen = ({ navigation }) => {
   );
 };
 
-
+// att brahian: se revisaron colores pa mantener el gris parejo con los demas screens
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000", // negro de fondo
+    backgroundColor: "#121212",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    padding: 20,
   },
-  card: {
+  inner: {
     width: "100%",
-    backgroundColor: "#1a1a1a", // gris oscuro para contraste
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 6,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "bold",
+    fontSize: 22,
+    color: "#ff6600",
     textAlign: "center",
-    color: "#ff6600", // naranja principal
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
+    color: "#ccc",
     textAlign: "center",
-    color: "#ccc", // gris claro
-    marginBottom: 25,
+    marginBottom: 20,
   },
   input: {
-    backgroundColor: "#2a2a2a",
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 15,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: "#444",
-    color: "#fff", // texto input
+    backgroundColor: "#1a1a1a",
+    color: "#fff",
+    padding: 10,
+    marginBottom: 12,
   },
   button: {
-    backgroundColor: "#ff6600", // naranja
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 15,
+    backgroundColor: "#ff6600",
+    paddingVertical: 12,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  buttonDisabled: {
-    backgroundColor: "#b34700", // naranja opaco cuando está deshabilitado
+    marginTop: 5,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
   },
-  linkButton: {
-    marginTop: 10,
-  },
-  linkText: {
-    textAlign: "center",
-    fontSize: 14,
+  link: {
     color: "#fff",
+    textAlign: "center",
+    marginTop: 15,
   },
   linkHighlight: {
     color: "#ff6600",
-    fontWeight: "bold",
   },
 });
 

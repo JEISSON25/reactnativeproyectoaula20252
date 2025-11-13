@@ -1,95 +1,78 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addDoc, collection } from "firebase/firestore";
-import * as ImagePicker from "react-native-image-picker"; // Importar ImagePicker
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import * as ImagePicker from "react-native-image-picker";
 import { useAuth } from "../context/AuthContext";
-import { useOffline } from "../context/OfflineContext"; // Importar contexto offline
+import { useOffline } from "../context/OfflineContext";
 import { db } from "../firebaseConfig";
-
-
-// Versión original sin localcache
-
+// no se confundan en esta parte, esto en pocas palabras bros hace que el usduario metas tantos en casillas y ya que ese dato se meta en la variable y listo
 const CreateRoutineScreen = ({ navigation }) => {
   const { user } = useAuth();
-  const { isAppOnline } = useOffline(); // Usar el estado de la app (online/offline)
+  const { isAppOnline } = useOffline();
+
   const [name, setName] = useState("");
   const [level, setLevel] = useState("");
   const [duration, setDuration] = useState("");
+  const [CaloriasTotales, setCaloriasTotales] = useState("");
   const [exercises, setExercises] = useState([]);
 
-  // Variables para cada ejercicio
+
   const [exerciseName, setExerciseName] = useState("");
   const [exerciseSets, setExerciseSets] = useState("");
-  const [exerciseReps, setExerciseReps] = useState("");
-  const [exerciseDescription, setExerciseDescription] = useState("");
-  const [exerciseVideoUrl, setExerciseVideoUrl] = useState("");
-  const [exerciseImageUrl, setExerciseImageUrl] = useState("");
-  const [imageUri, setImageUri] = useState(null); // Estado para la URI de la imagen seleccionada
 
-  // Agregar ejercicio a la lista
+  const [exerciseReps, setExerciseReps] = useState("");
+
+  const [exerciseDescription, setExerciseDescription] = useState("");
+
+  const [exerciseVideoUrl, setExerciseVideoUrl] = useState("");
+
+  const [exerciseImageUrl, setExerciseImageUrl] = useState("");
+
+  const [imageUri, setImageUri] = useState(null);
+
+  // hecho por camlo pa crear rutinas personalizadas, tanto offline como online
+  const selectImage = () => {
+    const options = { mediaType: "photo" };
+    ImagePicker.launchImageLibrary(options, (response) => {
+      if (response.didCancel || response.errorCode) return;
+      if (response.assets && response.assets.length > 0) {
+        const asset = response.assets[0];
+        setImageUri(asset.uri);
+        setExerciseImageUrl(asset.uri);
+        console.log("imagen seleccionada:", asset.uri);
+      }
+    });
+  };
+
   const addExercise = () => {
     if (!exerciseName || !exerciseReps || !exerciseSets) {
-      Alert.alert("Error", "Debes llenar todos los campos del ejercicio");
+      Alert.alert("error", "llena todos los campos del ejercicio");
       return;
     }
-
-    setExercises([
-      ...exercises,
-      {
-        id: Date.now().toString(),
-        name: exerciseName,
-        sets: exerciseSets,
-        reps: exerciseReps,
-        description: exerciseDescription,
-        videoUrl: exerciseVideoUrl,
-        imageUrl: imageUri || exerciseImageUrl, // Usar imageUri si está disponible, sino la URL manual
-      },
-    ]);
-
-    // Limpiar inputs
+    const newExercise = {
+      id: Date.now().toString(),
+      name: exerciseName,
+      sets: exerciseSets,
+      reps: exerciseReps,
+      description: exerciseDescription,
+      videoUrl: exerciseVideoUrl,
+      imageUrl: imageUri || exerciseImageUrl,
+    };
+    console.log("agregando ejercicio:", exerciseName);
+    setExercises([...exercises, newExercise]);
     setExerciseName("");
     setExerciseSets("");
     setExerciseReps("");
     setExerciseDescription("");
     setExerciseVideoUrl("");
     setExerciseImageUrl("");
-    setImageUri(null); // Limpiar la URI de la imagen seleccionada
-  };
-
-  // Función para seleccionar imagen
-  const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      includeBase64: false,
-      maxHeight: 200,
-      maxWidth: 200,
-    };
-
-    ImagePicker.launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorCode) {
-        console.log('ImagePicker Error: ', response.errorMessage);
-      } else if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setImageUri(asset.uri);
-        setExerciseImageUrl(asset.uri); // También actualizamos el campo de URL para que se muestre
-      }
-    });
+    setImageUri(null);
   };
 
   const saveRoutine = async () => {
-    if (!name || !level || !duration || exercises.length === 0) {
-      Alert.alert("Error", "Completa todos los campos antes de guardar");
+    if (!name || !level || !duration || !CaloriasTotales || exercises.length === 0) {
+      Alert.alert("error", "falta llenar campos antes de guardar");
       return;
     }
 
@@ -98,234 +81,157 @@ const CreateRoutineScreen = ({ navigation }) => {
       name,
       level,
       duration,
+      CaloriasTotales: parseFloat(CaloriasTotales),
       exercises,
       createdAt: new Date().toISOString(),
-      isOffline: !isAppOnline, // Usar el estado de la app para determinar si es offline
+      isOffline: !isAppOnline,
       id: Date.now().toString(),
     };
 
     try {
-      // Siempre guardar localmente primero
+      console.log("guardando rutina...");
       const storedRoutines = await AsyncStorage.getItem("offlineRoutines");
       const routines = storedRoutines ? JSON.parse(storedRoutines) : [];
       routines.push(routineData);
       await AsyncStorage.setItem("offlineRoutines", JSON.stringify(routines));
 
       if (isAppOnline && user) {
-        // Si está online y logueado, intentar sincronizar inmediatamente
-        await addDoc(collection(db, "customRoutines"), {
-          ...routineData,
-          isOffline: false,
-          userId: user.uid,
-        });
-        Alert.alert("Éxito", "Rutina creada y sincronizada correctamente.");
-        // Eliminar la rutina del almacenamiento local después de la sincronización exitosa
-        const updatedRoutines = routines.filter((r) => r.id !== routineData.id);
-        await AsyncStorage.setItem("offlineRoutines", JSON.stringify(updatedRoutines));
+        console.log("sincronizando rutina con firebase...");
+        await addDoc(collection(db, "customRoutines"), { ...routineData, isOffline: false });
+        Alert.alert("exito", "rutina sincronizada correctamente");
+        const updated = routines.filter((r) => r.id !== routineData.id);
+        await AsyncStorage.setItem("offlineRoutines", JSON.stringify(updated));
       } else {
-        // Si está offline o no logueado, solo guardar localmente
-        Alert.alert("Éxito", "Rutina guardada localmente. Se sincronizará cuando la aplicación esté online y hayas iniciado sesión.");
+        console.log("guardando rutina local, sin conexion");
+        Alert.alert("guardado", "rutina guardada localmente");
       }
+
       navigation.goBack();
     } catch (error) {
-      console.error("Error guardando rutina:", error);
-      Alert.alert("Error", "No se pudo guardar la rutina.");
+      console.log("error guardando rutina:", error);
+      Alert.alert("error", "no se pudo guardar la rutina");
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Crear Rutina</Text>
+        <Text style={styles.title}>crear rutina  </Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Nombre de la rutina"
-        placeholderTextColor="#A1A1A6"
+        placeholder="nombre"
+        placeholderTextColor="#888"
         value={name}
         onChangeText={setName}
       />
       <TextInput
         style={styles.input}
-        placeholder="Nivel (ej: Principiante)"
-        placeholderTextColor="#A1A1A6"
+        placeholder="nivel"
+        placeholderTextColor="#888"
         value={level}
         onChangeText={setLevel}
       />
-      <TextInput
+        <TextInput
         style={styles.input}
-        placeholder="Duración en minutos"
+        placeholder="duracion (min)"
         keyboardType="numeric"
-        placeholderTextColor="#A1A1A6"
+        placeholderTextColor="#888"
         value={duration}
         onChangeText={setDuration}
       />
+       <TextInput
+        style={styles.input}
+        placeholder="calorias totales"
+        keyboardType="numeric"
+        placeholderTextColor="#888"
+        value={CaloriasTotales}
+        onChangeText={setCaloriasTotales}
+      />
 
-      <Text style={styles.subtitle}>Ejercicios</Text>
+      <Text style={styles.subtitle}>ejercicios</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Nombre del ejercicio"
-        placeholderTextColor="#A1A1A6"
+        placeholder="nombre del ejercicio"
+        placeholderTextColor="#888"
         value={exerciseName}
         onChangeText={setExerciseName}
       />
       <TextInput
         style={styles.input}
-        placeholder="Sets"
+        placeholder="sets"
         keyboardType="numeric"
-        placeholderTextColor="#A1A1A6"
+        placeholderTextColor="#888"
         value={exerciseSets}
         onChangeText={setExerciseSets}
       />
       <TextInput
         style={styles.input}
-        placeholder="Repeticiones (ej: 10 o 20 seg)"
-        placeholderTextColor="#A1A1A6"
+        placeholder="reps o tiempo"
+        placeholderTextColor="#888"
         value={exerciseReps}
         onChangeText={setExerciseReps}
       />
       <TextInput
         style={styles.input}
-        placeholder="Descripción del ejercicio"
-        placeholderTextColor="#A1A1A6"
+        placeholder="descripcion"
+        placeholderTextColor="#888"
         value={exerciseDescription}
         onChangeText={setExerciseDescription}
       />
-
       <TextInput
         style={styles.input}
-        placeholder="URL del Video (opcional)"
-        placeholderTextColor="#A1A1A6"
+        placeholder="video (opcional)"
+        placeholderTextColor="#888"
         value={exerciseVideoUrl}
         onChangeText={setExerciseVideoUrl}
       />
       <TextInput
         style={styles.input}
-        placeholder="URL de la Imagen (opcional)"
-        placeholderTextColor="#A1A1A6"
+        placeholder="imagen (opcional)"
+        placeholderTextColor="#888"
         value={exerciseImageUrl}
         onChangeText={setExerciseImageUrl}
       />
 
-      <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
-        <Text style={styles.buttonText}>Seleccionar Imagen</Text>
+      <TouchableOpacity style={styles.button} onPress={selectImage}>
+        <Text style={styles.buttonText}>seleccionar imagen</Text>
       </TouchableOpacity>
 
-      {imageUri && <Text style={styles.imageSelectedText}>Imagen seleccionada: {imageUri.substring(imageUri.lastIndexOf('/') + 1)}</Text>}
+      {imageUri && <Text style={styles.textSmall}>imagen {imageUri.split("/").pop()}</Text>}
 
       <TouchableOpacity style={styles.button} onPress={addExercise}>
-        <Text style={styles.buttonText}>Agregar Ejercicio</Text>
+        <Text style={styles.buttonText}>agregar ejercicio</Text>
       </TouchableOpacity>
 
       {exercises.map((ex) => (
-        <View key={ex.id} style={styles.exerciseCard}>
-          <Text style={styles.exerciseText}>{ex.name}</Text>
-          <Text style={styles.exerciseText}>
-            {ex.sets} sets x {ex.reps} reps
+        <View key={ex.id} style={styles.exerciseBox}>
+          <Text style={styles.text}>{ex.name}</Text>
+          <Text style={styles.textSmall}>
+            {ex.sets} sets x {ex.reps}
           </Text>
-          {ex.description ? (
-            <Text style={styles.exerciseText}>{ex.description}</Text>
-          ) : null}
-          {ex.videoUrl ? (
-            <Text style={styles.exerciseText}>Video: {ex.videoUrl}</Text>
-          ) : null}
-          {ex.imageUrl ? (
-            <Text style={styles.exerciseText}>Imagen: {ex.imageUrl}</Text>
-          ) : null}
         </View>
       ))}
 
-      <TouchableOpacity style={styles.saveButton} onPress={saveRoutine}>
-        <Text style={styles.buttonText}>Guardar Rutina</Text>
+      <TouchableOpacity style={styles.buttonGreen} onPress={saveRoutine}>
+        <Text style={styles.buttonText}>guardar rutina</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
 
-export default CreateRoutineScreen;
-
+// att andre: reviso la parte de imagenes pa que no se rompa cuando el usuario cancele
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#1C1C1E",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: 20,
-    marginBottom: 10,
-    color: "#FF6B00",
-  },
-  input: {
-    backgroundColor: "#2C2C2E",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: "#FF6B00",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 15,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  imageButton: {
-    backgroundColor: "#1E90FF", // Un color diferente para el botón de imagen
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 15,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  saveButton: {
-    backgroundColor: "#34C759",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  exerciseCard: {
-    backgroundColor: "#2C2C2E",
-    padding: 14,
-    borderRadius: 10,
-    marginVertical: 6,
-  },
-  exerciseText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  imageSelectedText: {
-    color: "#34C759",
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
+  container: { flex: 1, backgroundColor: "#121212", padding: 10 },
+  title: { color: "#fff", fontSize: 20, textAlign: "center", marginBottom: 15 },
+  subtitle: { color: "#FF6B00", fontSize: 16, marginVertical: 10 },
+  input: { backgroundColor: "#1a1a1a", color: "#fff", padding: 10, marginBottom: 10 },
+  button: { backgroundColor: "#FF6B00", padding: 10, marginTop: 5, alignItems: "center" },
+  buttonGreen: { backgroundColor: "#34C759", padding: 10, marginTop: 10, alignItems: "center" },
+  buttonText: { color: "#fff" },
+  text: { color: "#fff" },
+  textSmall: { color: "#ccc", fontSize: 12, marginBottom: 4 },
+  exerciseBox: { backgroundColor: "#1a1a1a", padding: 8, marginVertical: 4 },
 });
+
+export default CreateRoutineScreen;
