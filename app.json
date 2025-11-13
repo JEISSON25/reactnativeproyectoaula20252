@@ -13,17 +13,39 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.caroolinaag.AppMonitoreoAmbiental",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "92bb1d95-6af3-46c7-91d8-b1befc9b520d"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/92bb1d95-6af3-46c7-91d8-b1befc9b520d"
     }
   }
 }

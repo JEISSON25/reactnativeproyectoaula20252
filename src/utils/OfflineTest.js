@@ -1,5 +1,9 @@
 // src/utils/OfflineTest.js
 // Utilidades para probar el modo offline
+import { OfflineTest } from '../utils/OfflineTest';
+
+const restore = OfflineTest.simulateNetworkError();
+
 
 export const OfflineTest = {
   // Simular error de red para probar caché
