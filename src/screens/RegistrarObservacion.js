@@ -1,145 +1,153 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { db } from "../../firebaseConfig"; 
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import React, { useState, useEffect } from 'react';
+import {View,Text,TextInput,TouchableOpacity,StyleSheet,Alert,useColorScheme,} from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+import { useAuth } from '../context/AuthContext';
+import { OfflineObservations } from '../utils/OfflineObservations';
+import { notificarSiCumpleAlerta } from '../utils/notificarAlerta';
 
-export default function RegistrarObservacion() {
-  const [fechaHora, setFechaHora] = useState("");
-  const [ubicacion, setUbicacion] = useState("");
-  const [temperatura, setTemperatura] = useState("");
-  const [humedad, setHumedad] = useState("");
-  const [presion, setPresion] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [user, setUser] = useState(null);
+export default function RegistrarObservacion({ navigation }) {
+  const { user } = useAuth();
+  const colorScheme = useColorScheme(); // 'light' o 'dark'
+  const isDark = colorScheme === 'dark';
 
-    useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (usuario) => {
-      setUser(usuario); // 
-    });
+  const [online, setOnline] = useState(true);
+  const [ciudad, setCiudad] = useState('');
+  const [temp, setTemp] = useState('');
+  const [humedad, setHumedad] = useState('');
 
-    return unsubscribe; // limpiar suscripción
-  }, []);
-
-  // Al cargar la pantalla, fijamos la fecha y hora actual
+  // Detectar conexión
   useEffect(() => {
-    const now = new Date();
-    const fechaFormateada = now.toLocaleDateString();
-    const horaFormateada = now.toLocaleTimeString();
-    setFechaHora(`${fechaFormateada} ${horaFormateada}`);
-  }, []);    
-  
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const wasOffline = !online && state.isConnected;
+      setOnline(state.isConnected);
+      if (wasOffline) sincronizar();
+    });
+    return () => unsubscribe();
+  }, [online]);
+
+  const sincronizar = async () => {
+    const count = await OfflineObservations.sync();
+    if (count > 0) {
+      Alert.alert('Sincronizado', `${count} observaciones subidas`);
+      await OfflineObservations.clearSynced();
+    }
+  };
 
   const handleGuardar = async () => {
+    if (!user) return Alert.alert('Error', 'Debes estar logueado');
 
-    if (!ubicacion.trim()) {
-      Alert.alert("Error", "La ubicación (ciudad) es obligatoria");
-      return;
-    }
+    const observacion = {
+      uid: user.uid,
+      ubicacion: ciudad.trim(),
+      temperature_2m: parseFloat(temp) || null,
+      relative_humidity_2m: parseFloat(humedad) || null,
+    };
 
-    if (!temperatura && !humedad && !presion && !descripcion.trim()) {
-      Alert.alert("Error", "Debes ingresar al menos un valor (temperatura, humedad, presión o descripción)");
-      return;
-    }
+    try {
+      if (online) {
+        await OfflineObservations.save(observacion);
+        await sincronizar();
+        await notificarSiCumpleAlerta(observacion, user.uid); // ← ALERTA
 
-    try {     
+        Alert.alert('Éxito', 'Observación guardada y enviada');
+        
+      } else {
+        await OfflineObservations.save(observacion);
+        Alert.alert('Offline', 'Guardado localmente. Se sincronizará al tener internet');
+      }
 
-      await addDoc(collection(db, "observaciones"), {
-        uid: user.uid,
-        ubicacion,
-        temperatura,
-        humedad,
-        presion,
-        descripcion,
-        fecha: serverTimestamp(), // fecha y hora automática de Firebase
-      });
-
-      Alert.alert("Éxito", "Observación registrada correctamente");
-      setUbicacion("");
-      setTemperatura("");
-      setHumedad("");
-      setPresion("");
-      setDescripcion("");
+      // Limpiar campos
+      setCiudad('');
+      setTemp('');
+      setHumedad('');
     } catch (error) {
-      Alert.alert("Error", "No se pudo guardar la observación");
+      Alert.alert('Error', 'No se pudo guardar la observación');
       console.error(error);
     }
   };
 
+  // Estilos dinámicos
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 20,
+      backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 10,
+      color: isDark ? '#e2e8f0' : '#1e293b',
+    },
+    status: {
+      textAlign: 'center',
+      marginBottom: 20,
+      fontWeight: '600',
+    },
+    online: { color: '#10b981' },
+    offline: { color: '#f97316' },
+    input: {
+      backgroundColor: isDark ? '#1e293b' : '#fff',
+      color: isDark ? '#e2e8f0' : '#1e293b',
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#334155' : '#ddd',
+      fontSize: 16,
+    },
+    boton: {
+      backgroundColor: '#10b981',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    botonTexto: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+  });
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registro de Observaciones</Text>
+      <Text style={styles.title}>Registrar Observación</Text>
+      <Text style={[styles.status, online ? styles.online : styles.offline]}>
+        {online ? 'Online' : 'Offline'}
+      </Text>
 
-      {/* Mostrar fecha y hora actual */}
-      <Text style={styles.fecha}>Fecha y Hora: {fechaHora}</Text>
-
-      <Text>Ubicación (Ciudad)</Text>
       <TextInput
         style={styles.input}
-        value={ubicacion}
-        onChangeText={setUbicacion}
-        placeholder="Ej: Medellín"
+        placeholder="Ciudad"
+        placeholderTextColor={isDark ? '#94a3b8' : '#94a3b8'}
+        value={ciudad}
+        onChangeText={setCiudad}
+        autoCapitalize="words"
       />
 
-      <Text>Temperatura (°C)</Text>
       <TextInput
         style={styles.input}
-        value={temperatura}
-        onChangeText={setTemperatura}
+        placeholder="Temperatura (°C)"
+        placeholderTextColor={isDark ? '#94a3b8' : '#94a3b8'}
+        value={temp}
+        onChangeText={setTemp}
         keyboardType="numeric"
       />
 
-      <Text>Humedad (%)</Text>
       <TextInput
         style={styles.input}
+        placeholder="Humedad (%)"
+        placeholderTextColor={isDark ? '#94a3b8' : '#94a3b8'}
         value={humedad}
         onChangeText={setHumedad}
         keyboardType="numeric"
       />
 
-      <Text>Presión Atmosférica (hPa)</Text>
-      <TextInput
-        style={styles.input}
-        value={presion}
-        onChangeText={setPresion}
-        keyboardType="numeric"
-      />
-
-      <Text>Observaciones</Text>
-      <TextInput
-        style={[styles.input, { height: 80 }]}
-        value={descripcion}
-        onChangeText={setDescripcion}
-        multiline
-      />
-
-      <Button title="Guardar Observación" onPress={handleGuardar} />
+      <TouchableOpacity style={styles.boton} onPress={handleGuardar}>
+        <Text style={styles.botonTexto}>Guardar Observación</Text>
+      </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  fecha: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: "#007AFF",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-  },
-});
