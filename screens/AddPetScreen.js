@@ -1,5 +1,3 @@
-// Fixed AddPetScreen.js
-// Changes: Removed misplaced test button to 'Tree'. Added cancel button at the bottom.
 import React, { useState } from 'react';
 import {
   View,
@@ -11,9 +9,10 @@ import {
   Alert,
   ScrollView,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../firebaseConfig';
@@ -37,31 +36,67 @@ export default function AddPetScreen({ navigation }) {
     }));
   };
 
-  const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      includeBase64: false,
-      maxHeight: 800,
-      maxWidth: 800,
-      quality: 0.8,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.assets && response.assets[0]) {
-        setPhoto(response.assets[0]);
+  const requestPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos Necesarios',
+          'Necesitamos acceso a tu galería para seleccionar fotos de mascotas.'
+        );
+        return false;
       }
-    });
+    }
+    return true;
+  };
+
+  const selectImage = async () => {
+    console.log('Iniciando selección de imagen...');
+    
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) {
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      console.log('Resultado de ImagePicker:', result);
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        console.log('Imagen seleccionada:', result.assets[0].uri);
+        setPhoto(result.assets[0]);
+      } else {
+        console.log('Selección de imagen cancelada');
+      }
+    } catch (error) {
+      console.error('Error al seleccionar imagen:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen: ' + error.message);
+    }
   };
 
   const uploadImage = async (imageUri) => {
+    console.log('Subiendo imagen a Firebase Storage...');
     const filename = `pets/${currentUser.uid}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filename);
     
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log('Imagen subida exitosamente:', downloadURL);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error al subir imagen:', error);
+      throw error;
+    }
   };
 
   const handleSavePet = async () => {
@@ -83,9 +118,11 @@ export default function AddPetScreen({ navigation }) {
       let photoURL = null;
       
       if (photo) {
+        console.log('Subiendo foto de mascota...');
         photoURL = await uploadImage(photo.uri);
       }
 
+      console.log('Guardando mascota en Firestore...');
       await addDoc(collection(db, 'pets'), {
         name,
         species,
@@ -96,6 +133,7 @@ export default function AddPetScreen({ navigation }) {
         createdAt: new Date()
       });
 
+      console.log('Mascota registrada exitosamente');
       Alert.alert('Éxito', 'Mascota registrada correctamente', [
         {
           text: 'OK',
@@ -105,7 +143,7 @@ export default function AddPetScreen({ navigation }) {
 
     } catch (error) {
       console.error('Error al guardar mascota:', error);
-      Alert.alert('Error', 'No se pudo registrar la mascota');
+      Alert.alert('Error', 'No se pudo registrar la mascota: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -117,15 +155,23 @@ export default function AddPetScreen({ navigation }) {
         <Text style={styles.title}>Registrar Nueva Mascota</Text>
 
         <View style={styles.photoSection}>
-          <TouchableOpacity style={styles.photoButton} onPress={selectImage}>
+          <TouchableOpacity 
+            style={styles.photoButton} 
+            onPress={selectImage}
+            activeOpacity={0.7}
+          >
             {photo ? (
               <Image source={{ uri: photo.uri }} style={styles.selectedImage} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoText}>+ Agregar Foto</Text>
+                <Text style={styles.photoIcon}>📷</Text>
+                <Text style={styles.photoText}>Agregar Foto</Text>
               </View>
             )}
           </TouchableOpacity>
+          <Text style={styles.photoHint}>
+            {photo ? 'Toca para cambiar' : 'Toca para seleccionar una foto'}
+          </Text>
         </View>
 
         <View style={styles.formSection}>
@@ -204,24 +250,35 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   photoButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     overflow: 'hidden',
+    marginBottom: 10,
   },
   photoPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#e1e1e1',
+    backgroundColor: '#e8f4f8',
     justifyContent: 'center',
     alignItems: 'center',
-    borderStyle: 'dashed',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#007AFF',
+    borderStyle: 'dashed',
+  },
+  photoIcon: {
+    fontSize: 40,
+    marginBottom: 5,
   },
   photoText: {
     color: '#007AFF',
     fontWeight: '600',
+    fontSize: 14,
+  },
+  photoHint: {
+    color: '#666',
+    fontSize: 13,
+    textAlign: 'center',
   },
   selectedImage: {
     width: '100%',

@@ -133,7 +133,7 @@ export default function SpecialistsScreen() {
     <SafeAreaView style={styles.container}>
       {!isOnline && (
         <View style={styles.offlineWarning}>
-          <Text style={styles.offlineWarningText}>📵 Modo sin conexión</Text>
+          <Text style={styles.offlineWarningText}>Modo sin conexión</Text>
         </View>
       )}
 

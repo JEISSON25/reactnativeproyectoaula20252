@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; /////S
+import React, { useState, useEffect } from 'react'; 
 import {
   View,
   Text,
@@ -28,7 +28,7 @@ import { useOffline } from '../OfflineContext';
 
 export default function AppointmentScreen({ navigation }) {
   const [appointments, setAppointments] = useState([]);
-  const [specialists, setSpecialists] = useState([]);
+  const [specialists, setEspecialistas] = useState([]);
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,12 +45,12 @@ export default function AppointmentScreen({ navigation }) {
   useEffect(() => {
     if (!currentUser) return;
 
-    loadSpecialists();
+    cargarEspecialistas();
     loadUserPets();
     loadAppointments();
   }, [currentUser]);
 
-  const loadSpecialists = async () => {
+  const cargarEspecialistas = async () => {
     if (isOnline) {
       try {
         const specialistsQuery = query(collection(db, 'specialists'));
@@ -59,14 +59,14 @@ export default function AppointmentScreen({ navigation }) {
           id: doc.id,
           ...doc.data()
         }));
-        setSpecialists(specialistsData);
+        setEspecialistas(specialistsData);
         await cacheData('specialists', specialistsData);
       } catch (error) {
         console.error('Error loading specialists:', error);
       }
     } else {
       const cached = await getCachedData('specialists');
-      if (cached) setSpecialists(cached);
+      if (cached) setEspecialistas(cached);
     }
   };
 
@@ -283,7 +283,7 @@ export default function AppointmentScreen({ navigation }) {
       </View>
       <Text style={styles.specialty}>{item.specialistSpecialty}</Text>
       <Text style={styles.petName}>Mascota: {item.petName}</Text>
-      <Text style={styles.dateTime}>📅 {item.date} - ⏰ {item.time}</Text>
+      <Text style={styles.dateTime}> {item.date} -  {item.time}</Text>
       <Text style={styles.reason}>Motivo: {item.reason}</Text>
       
       <TouchableOpacity
@@ -307,7 +307,7 @@ export default function AppointmentScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {!isOnline && (
         <View style={styles.offlineWarning}>
-          <Text style={styles.offlineWarningText}>📵 Modo sin conexión</Text>
+          <Text style={styles.offlineWarningText}>Modo sin conexión</Text>
         </View>
       )}
 
@@ -342,7 +342,6 @@ export default function AppointmentScreen({ navigation }) {
         <Text style={styles.addButtonText}>+ Agendar Cita</Text>
       </TouchableOpacity>
 
-      {/* Modal para crear cita */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -354,7 +353,6 @@ export default function AppointmentScreen({ navigation }) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>Nueva Cita</Text>
 
-              {/* Seleccionar Especialista */}
               <Text style={styles.label}>1. Selecciona un Especialista: *</Text>
               {specialists.length === 0 ? (
                 <Text style={styles.warningText}>No hay especialistas disponibles</Text>
@@ -380,7 +378,6 @@ export default function AppointmentScreen({ navigation }) {
                 </ScrollView>
               )}
 
-              {/* Seleccionar Mascota */}
               <Text style={styles.label}>2. Selecciona una Mascota: *</Text>
               {pets.length === 0 ? (
                 <Text style={styles.warningText}>No tienes mascotas registradas</Text>
@@ -406,14 +403,13 @@ export default function AppointmentScreen({ navigation }) {
                 </ScrollView>
               )}
 
-              {/* Seleccionar Fecha */}
               <Text style={styles.label}>3. Selecciona una Fecha: *</Text>
               <TouchableOpacity 
                 style={styles.dateTimeButton}
                 onPress={() => setShowDatePicker(!showDatePicker)}
               >
                 <Text style={styles.dateTimeButtonText}>
-                  {selectedDate || '📅 Toca para seleccionar fecha'}
+                  {selectedDate || 'Toca para seleccionar fecha'}
                 </Text>
               </TouchableOpacity>
 
@@ -442,14 +438,13 @@ export default function AppointmentScreen({ navigation }) {
                 </ScrollView>
               )}
 
-              {/* Seleccionar Hora */}
               <Text style={styles.label}>4. Selecciona una Hora: *</Text>
               <TouchableOpacity 
                 style={styles.dateTimeButton}
                 onPress={() => setShowTimePicker(!showTimePicker)}
               >
                 <Text style={styles.dateTimeButtonText}>
-                  {selectedTime || '⏰ Toca para seleccionar hora'}
+                  {selectedTime || 'Toca para seleccionar hora'}
                 </Text>
               </TouchableOpacity>
 
@@ -478,7 +473,7 @@ export default function AppointmentScreen({ navigation }) {
                 </ScrollView>
               )}
 
-              {/* Motivo */}
+              
               <Text style={styles.label}>5. Motivo de la consulta: *</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}

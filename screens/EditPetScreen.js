@@ -9,9 +9,10 @@ import {
   Alert,
   ScrollView,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../firebaseConfig';
@@ -37,32 +38,70 @@ export default function EditPetScreen({ route, navigation }) {
     }));
   };
 
-  const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      includeBase64: false,
-      maxHeight: 800,
-      maxWidth: 800,
-      quality: 0.8,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.assets && response.assets[0]) {
-        setNewPhoto(response.assets[0]);
-        setPhoto(response.assets[0]);
+  // Solicitar permisos
+  const requestPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos Necesarios',
+          'Necesitamos acceso a tu galería para seleccionar fotos.'
+        );
+        return false;
       }
-    });
+    }
+    return true;
+  };
+
+  const selectImage = async () => {
+    console.log('📸 Iniciando selección de imagen para editar...');
+    
+    // Solicitar permisos primero
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) {
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      console.log('Resultado de ImagePicker:', result);
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        console.log('Nueva imagen seleccionada:', result.assets[0].uri);
+        setNewPhoto(result.assets[0]);
+        setPhoto(result.assets[0]);
+      } else {
+        console.log('Selección de imagen cancelada');
+      }
+    } catch (error) {
+      console.error('Error al seleccionar imagen:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la imagen: ' + error.message);
+    }
   };
 
   const uploadImage = async (imageUri) => {
+    console.log('Subiendo nueva imagen a Firebase Storage...');
     const filename = `pets/${currentUser.uid}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filename);
     
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log('Imagen subida exitosamente:', downloadURL);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error al subir imagen:', error);
+      throw error;
+    }
   };
 
   const handleUpdatePet = async () => {
@@ -84,9 +123,11 @@ export default function EditPetScreen({ route, navigation }) {
       let photoURL = pet.photoURL;
       
       if (newPhoto) {
+        console.log('Subiendo nueva foto de mascota...');
         photoURL = await uploadImage(newPhoto.uri);
       }
 
+      console.log('Actualizando mascota en Firestore...');
       const petRef = doc(db, 'pets', pet.id);
       await updateDoc(petRef, {
         name,
@@ -97,6 +138,7 @@ export default function EditPetScreen({ route, navigation }) {
         updatedAt: new Date()
       });
 
+      console.log('Mascota actualizada exitosamente');
       Alert.alert('Éxito', 'Mascota actualizada correctamente', [
         {
           text: 'OK',
@@ -106,7 +148,7 @@ export default function EditPetScreen({ route, navigation }) {
 
     } catch (error) {
       console.error('Error al actualizar mascota:', error);
-      Alert.alert('Error', 'No se pudo actualizar la mascota');
+      Alert.alert('Error', 'No se pudo actualizar la mascota: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -118,12 +160,17 @@ export default function EditPetScreen({ route, navigation }) {
         <Text style={styles.title}>Editar Mascota</Text>
 
         <View style={styles.photoSection}>
-          <TouchableOpacity style={styles.photoButton} onPress={selectImage}>
+          <TouchableOpacity 
+            style={styles.photoButton} 
+            onPress={selectImage}
+            activeOpacity={0.7}
+          >
             {photo ? (
               <Image source={{ uri: photo.uri }} style={styles.selectedImage} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoText}>+ Cambiar Foto</Text>
+                <Text style={styles.photoIcon}>📷</Text>
+                <Text style={styles.photoText}>Cambiar Foto</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -208,31 +255,34 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   photoButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     overflow: 'hidden',
     marginBottom: 10,
   },
   photoPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#e1e1e1',
+    backgroundColor: '#e8f4f8',
     justifyContent: 'center',
     alignItems: 'center',
-    borderStyle: 'dashed',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#007AFF',
+    borderStyle: 'dashed',
+  },
+  photoIcon: {
+    fontSize: 40,
+    marginBottom: 5,
   },
   photoText: {
     color: '#007AFF',
     fontWeight: '600',
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 14,
   },
   photoHint: {
     color: '#666',
-    fontSize: 12,
+    fontSize: 13,
   },
   selectedImage: {
     width: '100%',

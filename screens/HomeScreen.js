@@ -91,6 +91,14 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
       <View style={styles.actions}>
+        {}
+        <TouchableOpacity
+          style={styles.medicalButton}
+          onPress={() => navigation.navigate('MedicalHistory', { pet: item })}
+        >
+          <Text style={styles.medicalButtonText}>Historial</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => navigation.navigate('EditPet', { pet: item })}
@@ -119,7 +127,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {!isOnline && (
         <View style={styles.offlineWarning}>
-          <Text style={styles.offlineWarningText}>📵 Sin conexión</Text>
+          <Text style={styles.offlineWarningText}>🔵 Sin conexión</Text>
         </View>
       )}
 
@@ -135,7 +143,7 @@ export default function HomeScreen({ navigation }) {
           style={[styles.navButton, styles.appointmentButton]}
           onPress={() => navigation.navigate('Appointments')}
         >
-          <Text style={styles.navButtonText}>📅 Agenda</Text>
+          <Text style={styles.navButtonText}>Agenda</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navButton}
@@ -147,7 +155,7 @@ export default function HomeScreen({ navigation }) {
           style={styles.navButton}
           onPress={() => navigation.navigate('Tree')}
         >
-          <Text style={styles.navButtonText}>Árbol</Text>
+          <Text style={styles.navButtonText}>Página 3 pronto profe</Text>
         </TouchableOpacity>
       </View>
 
@@ -305,14 +313,32 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
-  editButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
+ 
+  medicalButton: {
+    backgroundColor: '#5856D6',
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
     flex: 1,
-    marginRight: 10,
+    marginRight: 5,
+    marginBottom: 8,
+    minWidth: '100%',
+  },
+  medicalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  editButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 5,
   },
   editButtonText: {
     color: '#fff',
@@ -321,7 +347,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: '#FF3B30',
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
     flex: 1,

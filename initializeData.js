@@ -87,11 +87,11 @@ async function initializeSpecialists() {
   try {
     for (const specialist of specialists) {
       const docRef = await addDoc(collection(db, 'specialists'), specialist);
-      console.log(`✓ Especialista agregado: ${specialist.name} (ID: ${docRef.id})`);
+      console.log(`Especialista agregado: ${specialist.name} (ID: ${docRef.id})`);
     }
-    console.log('\n✅ Todos los especialistas han sido agregados exitosamente!');
+    console.log('\nTodos los especialistas han sido agregados exitosamente!');
   } catch (error) {
-    console.error('❌ Error al agregar especialistas:', error);
+    console.error('Error al agregar especialistas:', error);
   }
 }
 
