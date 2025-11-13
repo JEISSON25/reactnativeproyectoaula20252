@@ -13,11 +13,13 @@ import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/f
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
 import { useAuth } from '../AuthContext';
+import { useOffline } from '../OfflineContext';
 
 export default function HomeScreen({ navigation }) {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
+  const { isOnline } = useOffline();
 
   useEffect(() => {
     if (!currentUser) return;
@@ -83,13 +85,20 @@ export default function HomeScreen({ navigation }) {
           <Image source={{ uri: item.photoURL }} style={styles.petImage} />
         )}
         <View style={styles.petDetails}>
-            
           <Text style={styles.petName}>{item.name}</Text>
           <Text style={styles.petBreed}>{item.species} - {item.breed}</Text>
           <Text style={styles.petAge}>{item.age} años</Text>
         </View>
       </View>
       <View style={styles.actions}>
+        {}
+        <TouchableOpacity
+          style={styles.medicalButton}
+          onPress={() => navigation.navigate('MedicalHistory', { pet: item })}
+        >
+          <Text style={styles.medicalButtonText}>Historial</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => navigation.navigate('EditPet', { pet: item })}
@@ -116,6 +125,12 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {!isOnline && (
+        <View style={styles.offlineWarning}>
+          <Text style={styles.offlineWarningText}>🔵 Sin conexión</Text>
+        </View>
+      )}
+
       <View style={styles.header}>
         <Text style={styles.welcomeText}>¡Hola {currentUser.email}!</Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -125,16 +140,22 @@ export default function HomeScreen({ navigation }) {
 
       <View style={styles.navButtons}>
         <TouchableOpacity
+          style={[styles.navButton, styles.appointmentButton]}
+          onPress={() => navigation.navigate('Appointments')}
+        >
+          <Text style={styles.navButtonText}>Agenda</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('Details')}
         >
-          <Text style={styles.navButtonText}>Ir a Detalles</Text>
+          <Text style={styles.navButtonText}>Detalles</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigation.navigate('Tree')}
         >
-          <Text style={styles.navButtonText}>Ir a Pantalla 3</Text>
+          <Text style={styles.navButtonText}>Página 3 pronto profe</Text>
         </TouchableOpacity>
       </View>
 
@@ -167,6 +188,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  offlineWarning: {
+    backgroundColor: '#FF9500',
+    padding: 8,
+    alignItems: 'center',
+  },
+  offlineWarningText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -191,15 +222,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     padding: 10,
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   navButton: {
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  appointmentButton: {
+    backgroundColor: '#34C759',
   },
   navButtonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 13,
   },
   loadingText: {
     textAlign: 'center',
@@ -226,6 +267,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 15,
     paddingBottom: 100,
   },
   petCard: {
@@ -271,14 +313,32 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
-  editButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
+ 
+  medicalButton: {
+    backgroundColor: '#5856D6',
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
     flex: 1,
-    marginRight: 10,
+    marginRight: 5,
+    marginBottom: 8,
+    minWidth: '100%',
+  },
+  medicalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  editButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 5,
   },
   editButtonText: {
     color: '#fff',
@@ -287,7 +347,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: '#FF3B30',
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 6,
     flex: 1,
@@ -306,6 +366,11 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   addButtonText: {
     color: '#fff',
