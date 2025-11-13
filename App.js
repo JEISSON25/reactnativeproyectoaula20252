@@ -1,12 +1,14 @@
-// App.js
-import { NavigationContainer } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { OfflineProvider } from "./context/OfflineContext";
+import { OfflineProvider, useOffline } from "./context/OfflineContext";
+
 import CreateRoutineScreen from "./screens/CreateRoutineScreen";
+import GraficsScreen from "./screens/GraficsScreen";
 import HomeScreen from "./screens/HomeScreen";
 import LoginScreen from "./screens/LoginScreen";
 import MenuHamburguesa from "./screens/MenuHamburguesa";
@@ -16,52 +18,39 @@ import RoutineDetailScreen from "./screens/RoutineDetailScreen";
 import RoutinesScreen from "./screens/RoutinesScreen";
 import Splash from "./screens/SplashScreen";
 
-// Nuevas pantallas de información
-import MotivacionScreen from "./Screens-info/MotivacionScreen";
-import NutricionScreen from "./Screens-info/NutricionScreen";
-import SaludBienestarScreen from "./Screens-info/SaludBienestarScreen";
 
-// Para usar navegación dentro del header
-import { useNavigation } from "@react-navigation/native";
-import { useOffline } from "./context/OfflineContext";
-import { MaterialIcons } from "@expo/vector-icons";
-
+// att camilo: esto es el stack principal donde se maneja todo el flujo de pantallas
 const Stack = createStackNavigator();
 
-// Componente para el título del header
+
+// titulo del header que devuelve al home
 const HeaderTitle = () => {
-  const navigation = useNavigation(); // hook para navegación
+  const navigation = useNavigation();
 
   return (
-    <TouchableOpacity
-      onPress={() => navigation.navigate("Home")}
-      activeOpacity={0.7}
-      style={localStyles.centerContainer}
-    >
-      <Text style={localStyles.headerAppName}>TRAINFO</Text>
+    <TouchableOpacity onPress={() => navigation.navigate("Home")} style={styles.headerCenter}>
+      <Text style={styles.headerText}>TRAINFO</Text>
     </TouchableOpacity>
   );
 };
 
-// Componente para el botón de modo offline
+
+// boton para activar modo offline o volver online
+// esto lo dejo andre pq siempre se le iba el wifi jaja
 const OfflineToggle = () => {
-  const { isForcedOffline, toggleForcedOffline, isConnected } = useOffline();
+  const { isForcedOffline, toggleForcedOffline } = useOffline();
   const iconName = isForcedOffline ? "cloud-off" : "cloud-queue";
-  const color = isForcedOffline ? "#FF6B00" : "#34C759"; // Naranja para offline, Verde para online forzado
-  const tooltip = isForcedOffline ? "Modo Offline Forzado" : "Modo Online";
+  const color = isForcedOffline ? "#FF6B00" : "#34C759";
 
   return (
-    <TouchableOpacity
-      onPress={toggleForcedOffline}
-      style={{ marginRight: 10 }}
-      activeOpacity={0.7}
-    >
-      <MaterialIcons name={iconName} size={24} color={color} />
+    <TouchableOpacity onPress={toggleForcedOffline} style={{ marginRight: 10 }}>
+      <MaterialIcons name={iconName} size={22} color={color} />
     </TouchableOpacity>
   );
 };
 
-// Stack para autenticación (login / register)
+
+// stack para login y registro
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -69,54 +58,52 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Stack principal de la app
+
+// stack de la app cuando el usuario ya esta logueado
 const AppStack = () => (
   <Stack.Navigator
     screenOptions={{
-      headerStyle: {
-        backgroundColor: "#121212",
-        shadowColor: "transparent",
-        elevation: 0,
-      },
+      headerStyle: { backgroundColor: "#121212" },
       headerTintColor: "#FF6B00",
       headerTitleAlign: "center",
+
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <OfflineToggle />
           <MenuHamburguesa />
         </View>
       ),
-      headerRightContainerStyle: { paddingRight: 8 },
+
       headerTitle: () => <HeaderTitle />,
     }}
   >
-    {/* Pantallas principales */}
+
     <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="Routines" component={RoutinesScreen} />
     <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
     <Stack.Screen name="CreateRoutine" component={CreateRoutineScreen} />
     <Stack.Screen name="MyRoutines" component={MyRoutinesScreen} />
+    <Stack.Screen name="Grafics" component={GraficsScreen} />
 
-    {/* Pantallas de información */}
-    <Stack.Screen name="Nutricion" component={NutricionScreen} />
-    <Stack.Screen name="SaludBienestar" component={SaludBienestarScreen} />
-    <Stack.Screen name="Motivacion" component={MotivacionScreen} />
   </Stack.Navigator>
 );
 
-// Comprobador de autenticación
+
+// verifica si hay usuario o muestra login
 const AuthChecker = () => {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? <AppStack /> : <AuthStack />;
 };
 
-// Componente principal de la app
+
+// componente principal que controla splash y navegacion
 const AppContent = () => {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 4000);
+    // att brahian: esto hace que el splash se quite despues de 3 seg
+    const timer = setTimeout(() => setShowSplash(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -129,6 +116,8 @@ const AppContent = () => {
   );
 };
 
+
+// att santiago: si se cae la app aca, revisar el OfflineProvider qeu a veces no carga
 export default function App() {
   return (
     <AuthProvider>
@@ -139,17 +128,17 @@ export default function App() {
   );
 }
 
-// Estilos locales
-const localStyles = StyleSheet.create({
-  centerContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerAppName: {
+
+// estilos basicos del header
+const styles = StyleSheet.create({
+
+  headerCenter: { justifyContent: "center", alignItems: "center" },
+
+  headerText: {
     color: "#FF6B00",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "bold",
     textTransform: "uppercase",
-    letterSpacing: 1,
   },
+
 });

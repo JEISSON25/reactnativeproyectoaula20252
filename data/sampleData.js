@@ -1,85 +1,101 @@
-// Datos de ejemplo para rutinas (se usarán en caso de que no haya datos en la base de datos)
 export const sampleRoutines = [
   {
-    id: 'routine1', // Identificador único de la rutina
-    name: 'Rutina Principiante', // Nombre de la rutina
-    description: 'Rutina ideal para personas que están comenzando con el ejercicio', // Descripción breve
-    duration: 30, // Duración estimada en minutos
-    level: 'Principiante', // Nivel de dificultad
-    // Lista de ejercicios incluidos en la rutina
+    id: 'routine1',
+    name: 'Rutina Principiante',
+    description: 'Rutina ideal para personas que están comenzando con el ejercicio.',
+    duration: 30,
+    level: 'Principiante',
+    CaloriasTotales: 160,
     exercises: [
-      {
-        id: 'ex1',
-        name: 'Flexiones',
-        sets: 2, // Número de series
-        reps: 10, // Número de repeticiones
-        description: 'Flexiones de pecho tradicionales, puedes hacerlas con las rodillas apoyadas si es necesario'
-      },
-      {
-        id: 'ex2',
-        name: 'Sentadillas',
-        sets: 2,
-        reps: 15,
-        description: 'Sentadillas con peso corporal, mantén la espalda recta'
-      },
-      {
-        id: 'ex3',
-        name: 'Plancha',
-        sets: 2,
-        reps: '20 seg', // Aquí las repeticiones se miden en segundos
-        description: 'Mantener posición de plancha, cuerpo recto como una tabla'
-      }
-    ]
+      { id: 'ex1', name: 'Flexiones', sets: 2, reps: 10, description: 'Flexiones de pecho tradicionales.' },
+      { id: 'ex2', name: 'Sentadillas', sets: 2, reps: 15, description: 'Sentadillas con peso corporal.' },
+      { id: 'ex3', name: 'Plancha', sets: 2, reps: '20 seg', description: 'Mantén la posición de plancha.' },
+    ],
   },
   {
     id: 'routine2',
     name: 'Rutina Intermedia',
-    description: 'Para personas con experiencia básica en ejercicio',
+    description: 'Para personas con experiencia básica en ejercicio.',
     duration: 45,
     level: 'Intermedio',
+    CaloriasTotales: 355,
     exercises: [
-      { id: 'ex4', name: 'Flexiones', sets: 3, reps: 15, description: 'Flexiones de pecho tradicionales' },
-      { id: 'ex5', name: 'Sentadillas', sets: 3, reps: 20, description: 'Sentadillas con peso corporal' },
-      { id: 'ex6', name: 'Plancha', sets: 3, reps: '30 seg', description: 'Mantener posición de plancha' },
-      { id: 'ex7', name: 'Burpees', sets: 3, reps: 8, description: 'Ejercicio completo de cuerpo' }
-    ]
+      { id: 'ex4', name: 'Flexiones', sets: 3, reps: 15, description: 'Flexiones de pecho tradicionales.' },
+      { id: 'ex5', name: 'Sentadillas', sets: 3, reps: 20, description: 'Sentadillas con peso corporal.' },
+      { id: 'ex6', name: 'Plancha', sets: 3, reps: '30 seg', description: 'Mantén la posición de plancha.' },
+      { id: 'ex7', name: 'Burpees', sets: 3, reps: 8, description: 'Ejercicio completo de cuerpo.' },
+    ],
   },
   {
     id: 'routine3',
     name: 'Rutina Avanzada',
-    description: 'Rutina intensa para personas con experiencia',
+    description: 'Rutina intensa para personas con experiencia.',
     duration: 60,
     level: 'Avanzado',
+    CaloriasTotales: 570,
     exercises: [
-      { id: 'ex8', name: 'Flexiones', sets: 4, reps: 20, description: 'Flexiones de pecho tradicionales' },
-      { id: 'ex9', name: 'Sentadillas con salto', sets: 4, reps: 15, description: 'Sentadillas explosivas con salto' },
-      { id: 'ex10', name: 'Plancha', sets: 4, reps: '45 seg', description: 'Mantener posición de plancha' },
-      { id: 'ex11', name: 'Burpees', sets: 4, reps: 12, description: 'Ejercicio completo de cuerpo' },
-      { id: 'ex12', name: 'Mountain Climbers', sets: 4, reps: 20, description: 'Escaladores en posición de plancha' }
-    ]
-  }
+      { id: 'ex8', name: 'Flexiones', sets: 4, reps: 20, description: 'Flexiones tradicionales.' },
+      { id: 'ex9', name: 'Sentadillas con salto', sets: 4, reps: 15, description: 'Sentadillas explosivas.' },
+      { id: 'ex10', name: 'Plancha', sets: 4, reps: '45 seg', description: 'Mantén la posición.' },
+      { id: 'ex11', name: 'Burpees', sets: 4, reps: 12, description: 'Ejercicio completo del cuerpo.' },
+      { id: 'ex12', name: 'Mountain Climbers', sets: 4, reps: 20, description: 'Escaladores en plancha.' },
+    ],
+  },
+  {
+    id: 'routine4',
+    name: 'Rutina de Core y Abdomen',
+    description: 'Enfocada en fortalecer la zona media y mejorar estabilidad.',
+    duration: 35,
+    level: 'Intermedio',
+    CaloriasTotales: 280,
+    exercises: [
+      { id: 'ex13', name: 'Crunch abdominal', sets: 3, reps: 20, description: 'Eleva el torso manteniendo la zona lumbar en el suelo.' },
+      { id: 'ex14', name: 'Plancha', sets: 3, reps: '40 seg', description: 'Mantén el cuerpo recto y firme.' },
+      { id: 'ex15', name: 'Elevaciones de piernas', sets: 3, reps: 15, description: 'Levanta ambas piernas controladamente.' },
+      { id: 'ex16', name: 'Torsión rusa', sets: 3, reps: 20, description: 'Gira el torso de un lado a otro con las piernas elevadas.' },
+    ],
+  },
+  {
+    id: 'routine5',
+    name: 'Rutina de Piernas y Glúteos',
+    description: 'Para fortalecer y tonificar el tren inferior del cuerpo.',
+    duration: 45,
+    level: 'Intermedio',
+    CaloriasTotales: 320,
+    exercises: [
+      { id: 'ex17', name: 'Sentadillas', sets: 3, reps: 20, description: 'Ejercicio básico para piernas y glúteos.' },
+      { id: 'ex18', name: 'Zancadas alternadas', sets: 3, reps: 12, description: 'Da un paso adelante con cada pierna y baja el cuerpo.' },
+      { id: 'ex19', name: 'Puente de glúteos', sets: 3, reps: 15, description: 'Eleva la cadera contrayendo los glúteos.' },
+      { id: 'ex20', name: 'Sentadilla isométrica', sets: 3, reps: '30 seg', description: 'Mantén la posición a 90° en la pared.' },
+    ],
+  },
+  {
+    id: 'routine6',
+    name: 'Rutina de Brazos y Hombros',
+    description: 'Desarrolla fuerza en los brazos, hombros y tríceps.',
+    duration: 40,
+    level: 'Intermedio',
+    CaloriasTotales: 300,
+    exercises: [
+      { id: 'ex21', name: 'Flexiones cerradas', sets: 3, reps: 12, description: 'Trabaja más el tríceps y los hombros.' },
+      { id: 'ex22', name: 'Fondos entre sillas', sets: 3, reps: 10, description: 'Apoya las manos en sillas y baja el cuerpo.' },
+      { id: 'ex23', name: 'Elevaciones laterales', sets: 3, reps: 15, description: 'Levanta los brazos con peso ligero hasta la altura de los hombros.' },
+      { id: 'ex24', name: 'Curl de bíceps con botellas', sets: 3, reps: 15, description: 'Simula curl con botellas o mancuernas.' },
+    ],
+  },
+  {
+    id: 'routine7',
+    name: 'Rutina Cuerpo Completo',
+    description: 'Entrenamiento integral que combina fuerza y cardio.',
+    duration: 50,
+    level: 'Avanzado',
+    CaloriasTotales: 480,
+    exercises: [
+      { id: 'ex25', name: 'Burpees', sets: 3, reps: 12, description: 'Ejercicio de cuerpo completo con salto y flexión.' },
+      { id: 'ex26', name: 'Sentadillas', sets: 3, reps: 20, description: 'Fortalece piernas y glúteos.' },
+      { id: 'ex27', name: 'Flexiones', sets: 3, reps: 15, description: 'Trabaja pecho y brazos.' },
+      { id: 'ex28', name: 'Plancha', sets: 3, reps: '40 seg', description: 'Fortalece el core y la estabilidad.' },
+      { id: 'ex29', name: 'Mountain Climbers', sets: 3, reps: 25, description: 'Ejercicio cardiovascular y de abdomen.' },
+    ],
+  },
 ];
-
-// Función para inicializar datos en Firestore (se recomienda ejecutar solo una vez)
-export const initializeFirestoreData = async (db) => {
-  // Importa dinámicamente las funciones necesarias de Firestore
-  const { collection, addDoc } = await import('firebase/firestore');
-  
-  try {
-    // Recorre todas las rutinas de ejemplo y las guarda en la colección "routines"
-    for (const routine of sampleRoutines) {
-      await addDoc(collection(db, 'routines'), {
-        name: routine.name,
-        description: routine.description,
-        duration: routine.duration,
-        level: routine.level,
-        exercises: routine.exercises
-      });
-    }
-    // Mensaje en consola cuando se agregan los datos correctamente
-    console.log('Datos de ejemplo agregados a Firestore');
-  } catch (error) {
-    // Si algo falla, se muestra el error en consola
-    console.error('Error agregando datos de ejemplo:', error);
-  }
-};

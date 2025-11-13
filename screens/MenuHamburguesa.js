@@ -21,7 +21,6 @@ const MenuHamburguesa = () => {
     setOpen(false);
   };
 
-  // Cerrar menu automáticamente
   useFocusEffect(
     useCallback(() => {
       setOpen(false);
@@ -29,66 +28,27 @@ const MenuHamburguesa = () => {
   );
 
   return (
-    <View style={styles.menuContainer}>
-      <TouchableOpacity
-        onPress={() => setOpen(!open)}
-        style={styles.hamburgerButton}
-      >
-        <Text style={styles.hamburgerIcon}>☰</Text>
+    <View style={styles.container}>
+      <TouchableOpacity onPress={() => setOpen(!open)} style={styles.button}>
+        <Text style={styles.icon}>≡</Text>
       </TouchableOpacity>
 
       {open && (
-        <View style={styles.dropdownMenu}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("MyRoutines")}
-          >
-            <Text style={styles.menuItemText}>Mis Rutinas</Text>
+        <View style={styles.menu}>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("MyRoutines")}>
+            <Text style={styles.text}>Mis Rutinas</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("Routines")}
-          >
-            <Text style={styles.menuItemText}>Ver Rutinas</Text>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("Routines")}>
+            <Text style={styles.text}>Ver Rutinas</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("CreateRoutine")}
-          >
-            <Text style={styles.menuItemText}>Crear Rutina</Text>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("Grafics")}>
+            <Text style={styles.text}>Ver Progreso</Text>
           </TouchableOpacity>
-
-          <View style={styles.separator} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("Nutricion")}
-          >
-            <Text style={styles.menuItemText}>Nutrición</Text>
+          <TouchableOpacity style={styles.item} onPress={() => navigateTo("CreateRoutine")}>
+            <Text style={styles.text}>Crear Rutina</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("SaludBienestar")}
-          >
-            <Text style={styles.menuItemText}>Salud y Bienestar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigateTo("Motivacion")}
-          >
-            <Text style={styles.menuItemText}>Motivación</Text>
-          </TouchableOpacity>
-
-          <View style={styles.separator} />
-
-          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-            <Text style={[styles.menuItemText, { color: "#FF3B30" }]}>
-              Cerrar Sesión
-            </Text>
+          <TouchableOpacity style={styles.item} onPress={handleLogout}>
+            <Text style={[styles.text, styles.logout]}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -97,53 +57,26 @@ const MenuHamburguesa = () => {
 };
 
 const styles = StyleSheet.create({
-  menuContainer: {
-    marginRight: 10,
-    position: "relative",
-  },
-  hamburgerButton: {
+  container: { position: "relative" },
+  button: {
     backgroundColor: "#121212",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
   },
-  hamburgerIcon: {
-    color: "#FF6B00",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  dropdownMenu: {
+  icon: { color: "#FF6B00", fontSize: 20 },
+  menu: {
     position: "absolute",
-    top: 45,
+    top: 38,
     right: 0,
     backgroundColor: "#121212",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    minWidth: 180,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
-    zIndex: 999,
+    padding: 6,
+    width: 160,
   },
-  menuItem: {
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FF6B00",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "#FF6B00",
-    marginVertical: 8,
-  },
+  item: { paddingVertical: 8, alignItems: "center" },
+  text: { color: "#FF6B00", fontSize: 14 },
+  logout: { color: "#FF3B30" },
 });
 
 export default MenuHamburguesa;

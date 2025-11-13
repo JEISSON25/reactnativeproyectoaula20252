@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "939950371526",
+    "project_id": "traininfo-9141d",
+    "storage_bucket": "traininfo-9141d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939950371526:android:da828d91f00412c1ae9dc7",
+        "android_client_info": {
+          "package_name": "com.trainfo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVzRAOkQpnQBt8__W6vxOUP8RJ6pVkezY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

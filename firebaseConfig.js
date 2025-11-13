@@ -1,6 +1,7 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+import { getApp, getApps, initializeApp } from "firebase/app";
+import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBp6z1ioxfVxoHuWBjOSLPxQTsyo5tdZx4",
@@ -12,16 +13,29 @@ const firebaseConfig = {
   measurementId: "G-HLPT695NGW"
 };
 
+// Inicializar app solo una vez
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const app = initializeApp(firebaseConfig);
+// Inicializar Auth con persistencia (una sola vez)
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  });
+} catch (e) {
+  auth = getAuth(app); // ya inicializado
+}
 
-
-const auth = getAuth(app);
-
-
-const db = initializeFirestore(app, {
-
-});
+// Inicializar Firestore de forma segura
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+} catch (e) {
+  db = getFirestore(app); // si ya existe, se reutiliza
+}
 
 export { app, auth, db };
-
