@@ -34,14 +34,11 @@ export default function App() {
             {!isOnline && (
               <View style={{ backgroundColor: "red", padding: 10 }}>
                 <Text style={{ color: "white", textAlign: "center" }}>
-                  ⚠️ Modo Offline — Los cambios se sincronizarán cuando estés en línea
+                  ⚠️ Modo Offline - Los cambios se sincronizarán cuando estés en línea
                 </Text>
               </View>
             )}
-            <Button
-              title={forceOffline ? "Volver a modo Online" : "Forzar modo Offline"}
-              onPress={toggleOffline}
-            />
+
             <AppNavigator />
           </View>
 

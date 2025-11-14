@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "reactnativeproyectoaula20252",
+    "name": "Tdea Invetory",
     "slug": "reactnativeproyectoaula20252",
     "version": "1.0.0",
     "sdkVersion": "49.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/tdea-inventory.png",
     "scheme": "inventariorn",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -14,16 +14,19 @@
     "android": {
       "package": "com.tdea.inventariorn",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/tdea-inventory.png",
         "backgroundColor": "#ffffff"
       }
     },
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
+          "image": "./assets/tdea-inventory.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -32,6 +35,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2295862a-6a6f-4003-b6d4-2547a3a95f58"
+      }
     }
   }
 }
