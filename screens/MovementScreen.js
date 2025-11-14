@@ -73,7 +73,7 @@ export default function MovementScreen() {
                 return;
             }
 
-            //await clearPendingMovements();
+            await clearPendingMovements();
 
             Alert.alert("Sincronización", "Movimientos pendientes sincronizados correctamente.");
         } catch (e) {
