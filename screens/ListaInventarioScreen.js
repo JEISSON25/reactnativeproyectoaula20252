@@ -1,201 +1,468 @@
-import React, { useState, useCallback } from "react";
-import { View, Text, FlatList, TextInput, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
-import { useFocusEffect } from "@react-navigation/native";
-import { db, auth } from "../firebaseConfig";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Modal,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useAppContext } from "../context/AppContext";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import HeaderApp from "../components/HeaderApp";
 
-export default function ListaInventarioScreen({ navigation }) {
-  const [productos, setProductos] = useState([]);
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import Toast from "react-native-toast-message";
+import * as FileSystem from "expo-file-system/legacy";
+
+export default function ListaInventarioScreen() {
+  const navigation = useNavigation();
+  const { inventario, online, deleteProducto } = useAppContext();
+
   const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [listaFiltrada, setListaFiltrada] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
 
-  const cargarProductos = useCallback(async () => {
-    setCargando(true);
+  const eliminarProducto = async () => {
+    if (!productoSeleccionado) return;
+
     try {
-      const snapshot = await getDocs(collection(db, "productos"));
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProductos(lista);
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    }
-    setCargando(false);
-  }, []);
+      await deleteProducto(productoSeleccionado.id);
+      setModalVisible(false);
+      setProductoSeleccionado(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      cargarProductos();
-    }, [cargarProductos])
-  );
-
-  const eliminarProducto = async (id) => {
-    Alert.alert("Confirmar Eliminación", "¿Estás seguro de que deseas eliminar este producto?", [
-      { text: "Cancelar", style: "cancel" },
-      { 
-        text: "Eliminar", 
-        style: "destructive", 
-        onPress: async () => {
-          try {
-            // 🚨 OPTIMIZACIÓN: Elimina el producto del estado local (instantáneo)
-            setProductos(currentProductos => currentProductos.filter(p => p.id !== id));
-            
-            // Ejecuta la eliminación en la base de datos
-            await deleteDoc(doc(db, "productos", id));
-            
-            Alert.alert("Éxito", "Producto eliminado con éxito."); 
-            
-          } catch (error) {
-            // Si Firebase falla, recargamos la lista para que el producto regrese
-            Alert.alert("Error", "No se pudo eliminar el producto. La lista se ha actualizado.");
-            cargarProductos(); 
-          }
-        }
-      }
-    ]);
-  };
-
-  const logout = async () => {
-    try { 
-      await signOut(auth); 
-      // Reiniciamos la navegación al Login
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
+      Toast.show({
+        type: "success",
+        text1: "Producto eliminado",
+        text2: "Se eliminó correctamente ✔",
+        position: "bottom",
       });
-    } 
-    catch (error) { 
-      Alert.alert("Error", error.message); 
+    } catch (e) {
+      console.log("Error eliminarProducto:", e);
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se pudo eliminar el producto",
+        position: "bottom",
+      });
     }
   };
 
-  const filtrarProductos = productos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.codigo.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const confirmarEliminar = (item) => {
+    setProductoSeleccionado(item);
+    setModalVisible(true);
+  };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.productoContainer}>
-      <Image
-        // Asegúrate de que esta ruta sea válida o maneja el caso nulo.
-        source={item.foto ? { uri: item.foto } : require('../assets/no-image.png')}
-        style={styles.imagen}
-      />
-      <View style={styles.info}>
-        <Text style={styles.nombre}>{item.nombre}</Text>
-        <Text style={styles.detalle}>Código: {item.codigo}</Text>
-        <Text style={styles.cantidad}>Cantidad: {item.cantidad}</Text>
-        
-        <View style={styles.botones}>
-          <TouchableOpacity
-            style={[styles.buttonSmall, { backgroundColor: "#007AFF" }]}
-            onPress={() => navigation.navigate("EditarProducto", { producto: item })}
-          >
-            <Text style={styles.buttonText}>Editar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.buttonSmall, { backgroundColor: "#FF3B30" }]}
-            onPress={() => eliminarProducto(item.id)}
-          >
-            <Text style={styles.buttonText}>Eliminar</Text>
-          </TouchableOpacity>
+  useEffect(() => {
+    filtrar(busqueda);
+  }, [busqueda, inventario]);
+
+  const filtrar = (texto) => {
+    if (!texto) {
+      setListaFiltrada(inventario || []);
+      return;
+    }
+
+    const termino = texto.toLowerCase();
+    const filtro = (inventario || []).filter((item) => {
+      const nombre = (item?.nombre || "").toLowerCase();
+      const codigo = (item?.codigo || "").toLowerCase();
+      return nombre.includes(termino) || codigo.includes(termino);
+    });
+
+    setListaFiltrada(filtro);
+  };
+
+  const exportarInventarioPDF = async () => {
+    if (!inventario.length) {
+      Toast.show({
+        type: "info",
+        text1: "Inventario vacío",
+        text2: "No hay productos para exportar",
+        position: "bottom",
+      });
+      return;
+    }
+
+    const filas = inventario
+      .map(
+        (p) => `
+        <tr>
+          <td>${p.codigo}</td>
+          <td>${p.nombre}</td>
+          <td>${p.cantidad}</td>
+          <td>${p.stockMinimo ?? 0}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    const html = `
+      <html>
+        <body>
+          <h1>Inventario Completo</h1>
+          <table border="1" style="border-collapse: collapse; width: 100%; text-align:center;">
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Stock Mínimo</th>
+            </tr>
+            ${filas}
+          </table>
+        </body>
+      </html>
+    `;
+
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri);
+    } catch (e) {
+      console.log("Error exportarInventarioPDF:", e);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se pudo generar el PDF",
+        position: "bottom",
+      });
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    const fotoUri = item?.foto
+      ? item.foto.startsWith(FileSystem.documentDirectory)
+        ? item.foto
+        : FileSystem.documentDirectory + item.foto
+      : null;
+
+    return (
+      <View style={styles.card}>
+        {fotoUri ? (
+          <Image
+            source={{ uri: fotoUri }}
+            style={styles.imagen}
+            key={fotoUri}
+          />
+        ) : (
+          <View style={styles.imagenPlaceholder}>
+            <Text style={{ color: "#999" }}>Sin foto</Text>
+          </View>
+        )}
+
+        <View style={styles.info}>
+          <Text style={styles.nombre}>{item?.nombre}</Text>
+          <Text style={styles.codigo}>Código: {item?.codigo}</Text>
+          <Text style={styles.cantidad}>Stock: {item?.cantidad}</Text>
+          <Text style={styles.stockMinimo}>Stock Mínimo: {item?.stockMinimo}</Text>
+
+          {Number(item?.cantidad) <= Number(item?.stockMinimo) && (
+            <View style={styles.alertaContainer}>
+              <Text style={styles.alerta}>⚠ Stock Bajo</Text>
+            </View>
+          )}
+
+          <View style={styles.crudRow}>
+            <TouchableOpacity
+              style={[styles.crudBtn, { backgroundColor: "#007AFF" }]}
+              onPress={() =>
+                navigation.navigate("EditarProducto", { producto: item })
+              }
+            >
+              <Ionicons name="create-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.crudBtn, { backgroundColor: "#FF3B30" }]}
+              onPress={() => confirmarEliminar(item)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={{ flex: 1 }}>
+      <HeaderApp />
+
+      <LinearGradient colors={["#ffffff", "#e6ecff"]} style={styles.background}>
+        {!online && (
+          <Text style={styles.offline}>
+            Modo Offline — Los cambios se guardarán localmente.
+          </Text>
+        )}
+
         <TextInput
-          placeholder="Buscar por nombre o código"
-          style={styles.inputBusqueda}
+          style={styles.search}
+          placeholder="Buscar por nombre o código..."
           value={busqueda}
           onChangeText={setBusqueda}
         />
-        <TouchableOpacity style={styles.btnAgregar} onPress={() => navigation.navigate("AgregarProducto")}>
-          <Text style={styles.btnAgregarText}>+</Text>
+
+        <TouchableOpacity style={styles.pdfBtn} onPress={exportarInventarioPDF}>
+          <Ionicons name="document-text-outline" size={20} color="#fff" />
+          <Text style={styles.pdfTexto}>Exportar Inventario PDF</Text>
         </TouchableOpacity>
-      </View>
-      
-      {cargando ? (
-        <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 20 }} />
-      ) : (
+
         <FlatList
-          data={filtrarProductos}
-          keyExtractor={item => item.id}
+          data={listaFiltrada}
+          keyExtractor={(item) => item?.id?.toString()}
           renderItem={renderItem}
-          ListEmptyComponent={() => <Text style={styles.listaVacia}>No hay productos en el inventario.</Text>}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          extraData={listaFiltrada}
         />
-      )}
-      
-      <TouchableOpacity style={styles.btnCerrar} onPress={logout}>
-        <Text style={styles.buttonText}>Cerrar Sesión</Text>
-      </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate("AgregarProducto")}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+
+        <Modal transparent visible={modalVisible} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Ionicons
+                name="warning-outline"
+                size={50}
+                color="#FF3B30"
+                style={{ marginBottom: 10 }}
+              />
+              <Text style={styles.modalTitulo}>¿Eliminar producto?</Text>
+              <Text style={styles.modalTexto}>
+                {productoSeleccionado?.nombre}
+              </Text>
+
+              <View style={styles.modalBotones}>
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.btnCancelar]}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalBtnTextoCancelar}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.btnEliminar]}
+                  onPress={eliminarProducto}
+                >
+                  <Text style={styles.modalBtnTextoEliminar}>Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: '#F2F2F7' },
-  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15 },
-  inputBusqueda: { 
+  background: {
     flex: 1,
-    backgroundColor: '#fff', 
-    borderWidth: 1, 
-    borderColor: "#D1D1D6", 
-    padding: 12, 
-    borderRadius: 10, 
-    fontSize: 16,
-    marginRight: 10
+    padding: 15,
   },
-  btnAgregar: {
-    backgroundColor: "#34C759", // Verde para Agregar
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+
+  offline: {
+    backgroundColor: "#ff9500",
+    padding: 10,
+    borderRadius: 10,
+    textAlign: "center",
+    color: "#fff",
+    marginBottom: 12,
+    fontWeight: "700",
+  },
+
+  pdfBtn: {
+    flexDirection: "row",
+    alignSelf: "flex-end",
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  pdfTexto: {
+    color: "#fff",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
+  search: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#D1D1D6",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    padding: 14,
+    borderRadius: 15,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#DDE1F0",
+  },
+
+  imagen: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    marginRight: 15,
+  },
+
+  imagenPlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    backgroundColor: "#f2f3f7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15,
+  },
+
+  info: { flex: 1 },
+
+  nombre: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 5,
+  },
+
+  codigo: {
+    color: "#6b6b6b",
+    marginBottom: 4,
+  },
+
+  cantidad: {
+    fontSize: 16,
+  },
+
+  stockMinimo: {
+    fontSize: 14,
+    color: "#FF6347",
+    marginTop: 5,
+  },
+
+  alertaContainer: {
+    marginTop: 6,
+    backgroundColor: "#FFEBEE",
+    padding: 6,
+    borderRadius: 6,
+  },
+
+  alerta: {
+    color: "#FF3B30",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+
+  empty: {
+    textAlign: "center",
+    marginTop: 40,
+    fontSize: 17,
+    color: "#777",
+  },
+
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 30,
+    backgroundColor: "#007AFF",
+    width: 65,
+    height: 65,
+    borderRadius: 35,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  fabText: {
+    color: "#fff",
+    fontSize: 38,
+    fontWeight: "bold",
+    marginTop: -3,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
   },
-  btnAgregarText: { color: "#fff", fontWeight: "bold", fontSize: 24 },
-  btnCerrar: { 
-    backgroundColor: "#E67E22", 
-    padding: 12, 
-    borderRadius: 10, 
-    alignItems: "center", 
-    marginTop: 10 
+
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 18,
+    alignItems: "center",
   },
-  
-  productoContainer: { 
-    flexDirection: "row", 
-    backgroundColor: 'white', 
-    borderRadius: 12, 
-    marginVertical: 8, 
-    padding: 10, 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3, 
+
+  modalTitulo: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginTop: 10,
   },
-  imagen: { 
-    width: 80, 
-    height: 80, 
-    borderRadius: 8,
-    marginRight: 15 
+
+  modalTexto: {
+    fontSize: 16,
+    marginVertical: 10,
+    textAlign: "center",
   },
-  info: { flex: 1, justifyContent: 'center' },
-  nombre: { fontWeight: "bold", fontSize: 17, marginBottom: 4, color: '#333' },
-  detalle: { fontSize: 14, color: '#666' },
-  cantidad: { fontSize: 14, color: '#666', fontWeight: 'bold' },
-  botones: { flexDirection: "row", marginTop: 8 },
-  buttonSmall: { 
-    flex: 1, 
-    padding: 8, 
-    borderRadius: 8, 
-    alignItems: "center", 
-    marginRight: 10 
+
+  modalBotones: {
+    flexDirection: "row",
+    marginTop: 15,
+    gap: 12,
   },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
-  listaVacia: { textAlign: "center", marginTop: 50, fontSize: 16, color: '#666' },
+
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+
+  btnCancelar: {
+    backgroundColor: "#E5E5EA",
+  },
+
+  btnEliminar: {
+    backgroundColor: "#FF3B30",
+  },
+
+  modalBtnTextoCancelar: {
+    color: "#333",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
+  modalBtnTextoEliminar: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
+  crudRow: {
+    flexDirection: "row",
+    marginTop: 10,
+    gap: 10,
+  },
+
+  crudBtn: {
+    padding: 10,
+    borderRadius: 10,
+  },
 });
